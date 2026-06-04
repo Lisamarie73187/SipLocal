@@ -1,0 +1,1147 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Poppins", ui-sans-serif, system-ui, sans-serif;
+
+  /* SipSocial brand palette — Sip. Share. Socialize. */
+  --color-sunset-coral: #ff6b57;
+  --color-aperol-orange: #ff8a3d;
+  --color-golden-peach: #ffb26b;
+  --color-soft-sunset-pink: #f8b4c8;
+  --color-blush-background: #fce8e3;
+  --color-warm-cream: #fff8f3;
+  --color-dusty-mauve: #7c5c87;
+  --color-deep-plum: #4b3b59;
+  --color-charcoal-text: #2e2a35;
+  --color-soft-gray: #d9d1cc;
+  --color-soft-sky-blue: #a7d8f5;
+  --color-evening-blue: #7db8e8;
+  --color-twilight-blue: #5f8ccb;
+
+  /* Semantic tokens (use in components: bg-primary, text-dark, etc.) */
+  --color-primary: var(--color-sunset-coral);
+  --color-secondary: var(--color-aperol-orange);
+  --color-dark: var(--color-charcoal-text);
+  --color-background: var(--color-warm-cream);
+  --color-urgency: var(--color-aperol-orange);
+  --color-open: var(--color-sunset-coral);
+
+  /* Legacy aliases — map old token names to SipSocial palette */
+  --color-primary-orange: var(--color-sunset-coral);
+  --color-amber-accent: var(--color-golden-peach);
+  --color-dark-navy: var(--color-charcoal-text);
+  --color-warm-background: var(--color-warm-cream);
+  --color-urgency-orange: var(--color-aperol-orange);
+  --color-success-green: #22c55e;
+  --color-amber-gold: var(--color-golden-peach);
+  --color-sunset-orange: var(--color-aperol-orange);
+  --color-espresso-brown: var(--color-deep-plum);
+  --color-warm-cream-alias: var(--color-warm-cream);
+  --color-burnt-sienna: var(--color-aperol-orange);
+  --color-open-green: var(--color-sunset-coral);
+  --color-rose-accent: var(--color-soft-sunset-pink);
+  --color-rose-deep: var(--color-sunset-coral);
+
+  --color-foreground: var(--color-charcoal-text);
+  --color-muted-foreground: color-mix(in oklab, var(--color-charcoal-text) 65%, var(--color-deep-plum));
+  --color-card: #ffffff;
+  --color-card-foreground: var(--color-charcoal-text);
+  --color-popover: #ffffff;
+  --color-popover-foreground: var(--color-charcoal-text);
+  --color-primary-foreground: #ffffff;
+  --color-secondary-foreground: var(--color-charcoal-text);
+  --color-muted: color-mix(in oklab, var(--color-blush-background) 70%, white);
+  --color-accent: color-mix(in oklab, var(--color-soft-sunset-pink) 45%, var(--color-warm-cream));
+  --color-accent-foreground: var(--color-charcoal-text);
+  --color-destructive: var(--color-aperol-orange);
+  --color-destructive-foreground: #ffffff;
+  --color-border: color-mix(in oklab, var(--color-soft-gray) 85%, var(--color-charcoal-text));
+  --color-input: color-mix(in oklab, var(--color-soft-gray) 85%, var(--color-charcoal-text));
+  --color-ring: var(--color-sunset-coral);
+  --color-golden-glow: color-mix(
+    in oklab,
+    var(--color-sunset-coral) 55%,
+    var(--color-golden-peach) 45%
+  );
+
+  /* Map + timeline status */
+  --color-map-happening-now: var(--color-sunset-coral);
+  --color-map-starting-soon: var(--color-golden-peach);
+  --color-map-later-tonight: var(--color-dusty-mauve);
+  --color-map-selected: var(--color-soft-sky-blue);
+  --color-timeline-later: var(--color-map-later-tonight);
+
+  --gradient-brand-button: linear-gradient(
+    90deg,
+    var(--color-sunset-coral) 0%,
+    var(--color-aperol-orange) 50%,
+    var(--color-golden-peach) 100%
+  );
+  --gradient-brand-button-hover: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-sunset-coral) 94%, white) 0%,
+    color-mix(in oklab, var(--color-aperol-orange) 94%, white) 50%,
+    color-mix(in oklab, var(--color-golden-peach) 94%, white) 100%
+  );
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+:root {
+  --color-sunset-coral: #ff6b57;
+  --color-aperol-orange: #ff8a3d;
+  --color-golden-peach: #ffb26b;
+  --color-soft-sunset-pink: #f8b4c8;
+  --color-blush-background: #fce8e3;
+  --color-warm-cream: #fff8f3;
+  --color-dusty-mauve: #7c5c87;
+  --color-deep-plum: #4b3b59;
+  --color-charcoal-text: #2e2a35;
+  --color-soft-gray: #d9d1cc;
+  --color-soft-sky-blue: #a7d8f5;
+  --color-evening-blue: #7db8e8;
+  --color-twilight-blue: #5f8ccb;
+  --color-primary: var(--color-sunset-coral);
+  --color-secondary: var(--color-aperol-orange);
+  --color-dark: var(--color-charcoal-text);
+  --color-background: var(--color-warm-cream);
+  --color-primary-orange: var(--color-sunset-coral);
+  --color-amber-accent: var(--color-golden-peach);
+  --color-dark-navy: var(--color-charcoal-text);
+  --color-warm-background: var(--color-warm-cream);
+  --color-urgency-orange: var(--color-aperol-orange);
+  --color-rose-accent: var(--color-soft-sunset-pink);
+  --color-map-happening-now: var(--color-sunset-coral);
+  --color-map-starting-soon: var(--color-golden-peach);
+  --color-map-later-tonight: var(--color-dusty-mauve);
+  --color-map-selected: var(--color-soft-sky-blue);
+  --color-timeline-later: var(--color-map-later-tonight);
+  --gradient-brand-button: linear-gradient(
+    90deg,
+    var(--color-sunset-coral) 0%,
+    var(--color-aperol-orange) 50%,
+    var(--color-golden-peach) 100%
+  );
+  --gradient-brand-button-hover: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-sunset-coral) 94%, white) 0%,
+    color-mix(in oklab, var(--color-aperol-orange) 94%, white) 50%,
+    color-mix(in oklab, var(--color-golden-peach) 94%, white) 100%
+  );
+}
+
+/* Primary CTA — sunset coral → aperol orange → golden peach */
+.btn-gradient {
+  border: none;
+  background-color: var(--color-sunset-coral);
+  background-image: var(--gradient-brand-button);
+  color: #ffffff;
+  box-shadow: 0 2px 8px color-mix(in oklab, var(--color-sunset-coral) 32%, transparent);
+  transition:
+    background-image 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.btn-gradient:hover {
+  background-image: var(--gradient-brand-button-hover);
+  box-shadow: 0 3px 12px color-mix(in oklab, var(--color-sunset-coral) 38%, transparent);
+}
+
+.btn-gradient:active {
+  filter: brightness(0.97);
+}
+
+.btn-gradient:disabled {
+  opacity: 0.5;
+  filter: none;
+}
+
+[data-slot="button"][data-variant="default"]:not(:disabled) {
+  border: none;
+  background-color: var(--color-sunset-coral);
+  background-image: var(--gradient-brand-button);
+  color: #ffffff;
+  box-shadow: 0 2px 8px color-mix(in oklab, var(--color-sunset-coral) 32%, transparent);
+}
+
+[data-slot="button"][data-variant="default"]:not(:disabled):hover {
+  background-color: var(--color-sunset-coral);
+  background-image: var(--gradient-brand-button-hover);
+  box-shadow: 0 3px 12px color-mix(in oklab, var(--color-sunset-coral) 38%, transparent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 106.25%;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--color-dark);
+}
+
+/* Discovery page — inset content like reference mockup */
+.discovery-page {
+  background: var(--color-warm-background);
+}
+
+.discovery-page__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.discovery-content-inset {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: clamp(2rem, 7vw, 4.5rem);
+}
+
+.discovery-page__frame {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding-top: clamp(0.75rem, 2vw, 1.25rem);
+  padding-bottom: clamp(0.75rem, 2vw, 1.25rem);
+}
+
+/* Discovery split layout */
+.discovery-shell {
+  display: grid;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(260px, 35fr) minmax(0, 65fr);
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  overflow: hidden;
+}
+
+.discovery-shell__map {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.discovery-map-card {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--color-sunset-coral) 22%, var(--color-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-warm-cream) 88%, white) 0%,
+    color-mix(in oklab, var(--color-blush-background) 55%, var(--color-warm-cream)) 100%
+  );
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-charcoal-text) 5%, transparent),
+    0 10px 28px color-mix(in oklab, var(--color-soft-sunset-pink) 18%, transparent);
+}
+
+.discovery-map-card__loading {
+  color: color-mix(in oklab, var(--color-charcoal-text) 52%, var(--color-dusty-mauve));
+}
+
+@media (max-width: 767px) {
+  .discovery-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(220px, 42dvh);
+  }
+
+  .discovery-shell__timeline {
+    order: 2;
+  }
+
+  .discovery-shell__map {
+    order: 1;
+  }
+}
+
+/* Golden hour map — full viewport or embedded panel */
+.venue-map {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.venue-map--embedded {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.venue-map__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.venue-map-overlay-card {
+  max-height: min(70dvh, 420px);
+  overflow-y: auto;
+}
+
+.venue-map__canvas .mapboxgl-map {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.venue-map__canvas .mapboxgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: inherit;
+}
+
+/* Warm sunset grade — keeps streets/labels crisp */
+.venue-map__canvas .mapboxgl-canvas {
+  filter: sepia(0.08) saturate(1.1) hue-rotate(-2deg) brightness(1.03) contrast(1.02);
+}
+
+.venue-map__golden-tint {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-soft-sky-blue) 14%, transparent) 0%,
+    transparent 35%,
+    color-mix(in oklab, var(--color-golden-peach) 10%, transparent) 100%
+  );
+  opacity: 0.55;
+}
+
+.venue-map__wash {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 90% 55% at 50% 100%,
+    color-mix(in oklab, var(--color-soft-sunset-pink) 12%, transparent),
+    transparent 70%
+  );
+  opacity: 0.35;
+}
+
+/* Timeline filter chips */
+.filter-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.0625rem;
+  padding: 0.125rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--color-primary-orange) 18%, var(--color-border));
+  background: color-mix(in oklab, var(--color-primary-orange) 6%, var(--color-warm-background));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, white 40%, transparent);
+}
+
+.filter-segmented--days {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 0;
+  padding: 0.125rem 0.0625rem;
+}
+
+.filter-segmented--days button {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.filter-chip--tag-active {
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-dark-navy) 8%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--color-primary-orange) 20%, transparent);
+}
+
+/* Discovery header — sunset sky gradient */
+.discovery-header__brand {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.discovery-header {
+  background: linear-gradient(
+    115deg,
+    color-mix(in oklab, var(--color-soft-sunset-pink) 55%, white) 0%,
+    color-mix(in oklab, var(--color-golden-peach) 40%, white) 45%,
+    color-mix(in oklab, var(--color-soft-sky-blue) 35%, white) 100%
+  );
+  box-shadow: 0 1px 0 color-mix(in oklab, var(--color-charcoal-text) 6%, transparent);
+}
+
+.discovery-header__input {
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-dark-navy) 6%, transparent);
+}
+
+.discovery-filter-bar__primary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.discovery-filter-bar__count {
+  padding-top: 0.5rem;
+  color: color-mix(in oklab, var(--color-dark-navy) 55%, var(--color-rose-accent));
+}
+
+.discovery-filter-btn {
+  border-color: color-mix(in oklab, var(--color-charcoal-text) 10%, transparent);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-charcoal-text) 6%, transparent);
+}
+
+.discovery-filter-btn--active,
+.discovery-filter-btn--filters-active {
+  border-color: transparent;
+  background-color: var(--color-sunset-coral);
+  background-image: var(--gradient-brand-button);
+  color: #ffffff;
+  box-shadow: 0 2px 8px color-mix(in oklab, var(--color-sunset-coral) 28%, transparent);
+}
+
+.discovery-filter-btn--active:hover,
+.discovery-filter-btn--filters-active:hover {
+  background-image: var(--gradient-brand-button-hover);
+  color: #ffffff;
+}
+
+.discovery-filter-bar__expanded {
+  background: var(--color-card);
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--color-dark-navy) 8%, transparent);
+}
+
+.filter-chip--pill-active {
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-dark-navy) 6%, transparent);
+}
+
+/* Map legend — horizontal pill at bottom */
+.map-legend__bar {
+  max-width: 100%;
+}
+
+.map-legend__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border-radius: 9999px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.map-legend__icon--now {
+  background: var(--color-map-happening-now);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-map-happening-now) 45%, transparent);
+}
+
+.map-legend__icon--soon {
+  background: var(--color-map-starting-soon);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-map-starting-soon) 40%, transparent);
+}
+
+.map-legend__icon--later {
+  background: var(--color-map-later-tonight);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--color-map-later-tonight) 50%, transparent);
+}
+
+.map-legend__label--now {
+  color: var(--color-map-happening-now);
+}
+
+.map-legend__label--soon {
+  color: color-mix(in oklab, var(--color-map-starting-soon) 75%, var(--color-deep-plum));
+}
+
+.map-legend__label--later {
+  color: var(--color-map-later-tonight);
+}
+
+/* Happy hour timeline rail (left spine + colored dots) */
+.hh-timeline {
+  --timeline-gutter: 1.125rem;
+  --timeline-rail-center: calc(var(--timeline-gutter) / 2);
+  position: relative;
+}
+
+.hh-timeline::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--timeline-rail-center) - 1px);
+  top: 0.5rem;
+  bottom: 0.75rem;
+  border-left: 2px dashed color-mix(in oklab, var(--color-dark-navy) 18%, transparent);
+  pointer-events: none;
+}
+
+.hh-timeline__block {
+  display: grid;
+  grid-template-columns: var(--timeline-gutter) minmax(0, 1fr);
+  column-gap: 0.625rem;
+  row-gap: 0.625rem;
+  padding-bottom: 1.25rem;
+}
+
+.hh-timeline__block--last {
+  padding-bottom: 0.25rem;
+}
+
+.hh-timeline__marker {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+
+.hh-timeline__heading {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+}
+
+.hh-timeline__entries {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.hh-timeline__dot {
+  position: relative;
+  z-index: 1;
+  box-sizing: content-box;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+  border: 2px solid var(--color-warm-background);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-dark-navy) 12%, transparent);
+}
+
+.hh-timeline__dot--now {
+  background: var(--color-map-happening-now);
+}
+
+.hh-timeline__dot--soon {
+  background: var(--color-map-starting-soon);
+}
+
+.hh-timeline__dot--time {
+  background: var(--color-aperol-orange);
+}
+
+.hh-timeline__dot--later {
+  background: var(--color-timeline-later);
+}
+
+.venue-timeline-card {
+  background: var(--color-card);
+  box-shadow:
+    0 1px 2px color-mix(in oklab, var(--color-dark-navy) 6%, transparent),
+    0 4px 12px color-mix(in oklab, var(--color-dark-navy) 4%, transparent);
+}
+
+.now-badge {
+  background: linear-gradient(
+    90deg,
+    var(--color-sunset-coral) 0%,
+    var(--color-aperol-orange) 100%
+  );
+  box-shadow: 0 2px 8px color-mix(in oklab, var(--color-sunset-coral) 35%, transparent);
+}
+
+.now-badge__dot {
+  background: color-mix(in oklab, white 75%, var(--color-soft-sunset-pink));
+}
+
+.venue-deal-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklab, var(--color-primary-orange) 35%, transparent);
+  background: color-mix(in oklab, var(--color-primary-orange) 10%, white);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--color-urgency-orange) 55%, var(--color-dark-navy));
+}
+
+/* Timeline filter overlay — full height over peek + timeline */
+.timeline-panel__stage {
+  isolation: isolate;
+}
+
+.filter-expanded-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1px solid color-mix(in oklab, var(--color-primary-orange) 18%, var(--color-border));
+  background: color-mix(in oklab, var(--color-warm-background) 97%, white);
+  box-shadow:
+    0 -4px 24px color-mix(in oklab, var(--color-dark-navy) 10%, transparent),
+    0 8px 32px color-mix(in oklab, var(--color-dark-navy) 12%, transparent);
+  animation: filter-expanded-slide 280ms ease-out;
+}
+
+.filter-expanded-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.filter-expanded-panel__scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+@keyframes filter-expanded-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-expanded-panel__label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+.filter-expanded-panel__footer {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 0.5rem;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-warm-background) 94%, white);
+  padding: 0.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.filter-expanded-panel__apply {
+  background-image: var(--gradient-brand-button);
+  color: #ffffff;
+  box-shadow: 0 2px 10px color-mix(in oklab, var(--color-sunset-coral) 30%, transparent);
+}
+
+.filter-expanded-panel__apply:hover {
+  background-image: var(--gradient-brand-button-hover);
+}
+
+/* Dual-handle time range */
+.time-range-slider {
+  --time-range-track-h: 0.25rem;
+  --time-range-thumb-size: 1.125rem;
+  --time-range-thumb-offset: calc((var(--time-range-track-h) - var(--time-range-thumb-size)) / 2);
+}
+
+.time-range-slider__track-wrap {
+  position: relative;
+  height: var(--time-range-thumb-size);
+  margin-top: 0.5rem;
+}
+
+.time-range-slider__track {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: var(--time-range-track-h);
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-dark-navy) 10%, var(--color-muted));
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.time-range-slider__fill {
+  position: absolute;
+  top: 50%;
+  height: var(--time-range-track-h);
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-orange),
+    var(--color-amber-accent)
+  );
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.time-range-slider__input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--time-range-thumb-size);
+  margin: 0;
+  padding: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.time-range-slider__input::-webkit-slider-runnable-track {
+  height: var(--time-range-track-h);
+  background: transparent;
+  border: none;
+}
+
+.time-range-slider__input::-moz-range-track {
+  height: var(--time-range-track-h);
+  background: transparent;
+  border: none;
+}
+
+.time-range-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: var(--time-range-thumb-size);
+  height: var(--time-range-thumb-size);
+  margin-top: var(--time-range-thumb-offset);
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--color-primary-orange);
+  box-shadow: 0 2px 6px color-mix(in oklab, var(--color-dark-navy) 25%, transparent);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.time-range-slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--time-range-thumb-size);
+  height: var(--time-range-thumb-size);
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--color-primary-orange);
+  box-shadow: 0 2px 6px color-mix(in oklab, var(--color-dark-navy) 25%, transparent);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.time-range-slider__input--end {
+  z-index: 1;
+}
+
+.time-range-slider__input--start {
+  z-index: 2;
+}
+
+/* Single-handle time filter (10am–11pm) */
+.time-point-slider {
+  --time-point-track-h: 0.25rem;
+  --time-point-thumb-size: 1.125rem;
+  --time-point-thumb-offset: calc((var(--time-point-track-h) - var(--time-point-thumb-size)) / 2);
+}
+
+.time-point-slider__track-wrap {
+  position: relative;
+  height: var(--time-point-thumb-size);
+  margin-top: 0.25rem;
+}
+
+.time-point-slider__track {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: var(--time-point-track-h);
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--color-dark-navy) 10%, var(--color-muted));
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.time-point-slider__fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: var(--time-point-track-h);
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-primary-orange),
+    var(--color-amber-accent)
+  );
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.time-point-slider__input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--time-point-thumb-size);
+  margin: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: none;
+  z-index: 2;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.time-point-slider__input::-webkit-slider-runnable-track {
+  height: var(--time-point-track-h);
+  background: transparent;
+  border: none;
+}
+
+.time-point-slider__input::-moz-range-track {
+  height: var(--time-point-track-h);
+  background: transparent;
+  border: none;
+}
+
+.time-point-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: var(--time-point-thumb-size);
+  height: var(--time-point-thumb-size);
+  margin-top: var(--time-point-thumb-offset);
+  border-radius: 9999px;
+  border: 2px solid white;
+  background: var(--color-primary-orange);
+  box-shadow: 0 2px 6px color-mix(in oklab, var(--color-dark-navy) 25%, transparent);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.time-point-slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--time-point-thumb-size);
+  height: var(--time-point-thumb-size);
+  border: none;
+  border-radius: 9999px;
+  background: var(--color-primary-orange);
+  box-shadow:
+    0 0 0 2px white,
+    0 2px 6px color-mix(in oklab, var(--color-dark-navy) 25%, transparent);
+  pointer-events: auto;
+  cursor: grab;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-expanded-panel {
+    animation: none;
+  }
+}
+
+.golden-hour-header {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-primary) 25%, transparent),
+    0 12px 32px color-mix(in oklab, var(--color-espresso-brown) 12%, transparent);
+}
+
+.golden-hour-card {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-primary) 30%, transparent),
+    0 16px 40px color-mix(in oklab, var(--color-espresso-brown) 18%, transparent);
+}
+
+/* Status-based map pins — rounded teardrop, white icon, soft shadow */
+.venue-pin {
+  position: relative;
+  display: block;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  line-height: 0;
+  touch-action: manipulation;
+}
+
+.venue-pin__shape {
+  position: relative;
+  display: block;
+  filter: drop-shadow(0 3px 6px color-mix(in oklab, var(--color-dark-navy) 28%, transparent));
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.venue-pin__svg {
+  display: block;
+}
+
+.venue-pin__body {
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  transition: fill 0.2s ease;
+}
+
+.venue-pin__icon-wrap {
+  position: absolute;
+  left: 50%;
+  /* Center of pin head in teardrop SVG (viewBox 44×56) — ~y 23 */
+  top: 41%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.venue-pin__icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+}
+
+/* Crescent moon is drawn right-heavy — optical center in the pin head */
+.venue-pin--later-tonight .venue-pin__icon {
+  transform: translateX(-1px);
+}
+
+.venue-pin--happening-now .venue-pin__body {
+  fill: var(--color-map-happening-now);
+}
+
+.venue-pin--starting-soon .venue-pin__body {
+  fill: var(--color-map-starting-soon);
+}
+
+.venue-pin--later-tonight .venue-pin__body {
+  fill: var(--color-map-later-tonight);
+}
+
+.venue-pin--other-day .venue-pin__body {
+  fill: var(--color-evening-blue);
+}
+
+.venue-pin:hover .venue-pin__shape,
+.venue-pin:focus-visible .venue-pin__shape,
+.venue-pin--hover .venue-pin__shape {
+  transform: scale(1.08);
+}
+
+.venue-pin--selected .venue-pin__shape {
+  transform: scale(1.16);
+  filter: drop-shadow(0 0 0 3px #ffffff)
+    drop-shadow(0 4px 12px color-mix(in oklab, var(--color-dark-navy) 35%, transparent));
+}
+
+.venue-pin--selected .venue-pin__body {
+  fill: var(--color-map-selected);
+  stroke-width: 3;
+}
+
+.venue-pin--happening-now .venue-pin__shape {
+  animation: venue-pin-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes venue-pin-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 3px 6px color-mix(in oklab, var(--color-dark-navy) 28%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 3px 6px color-mix(in oklab, var(--color-dark-navy) 28%, transparent))
+      drop-shadow(0 0 0 4px color-mix(in oklab, var(--color-map-happening-now) 28%, transparent));
+  }
+}
+
+/* Cluster markers */
+.venue-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0 0.5rem;
+  border: 2.5px solid #ffffff;
+  border-radius: 9999px;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: 0 3px 10px color-mix(in oklab, var(--color-dark-navy) 30%, transparent);
+  transition: transform 0.2s ease;
+}
+
+.venue-cluster:hover,
+.venue-cluster:focus-visible {
+  transform: scale(1.08);
+}
+
+.venue-cluster--happening-now {
+  background: var(--color-map-happening-now);
+}
+
+.venue-cluster--starting-soon {
+  background: var(--color-map-starting-soon);
+}
+
+.venue-cluster--later-tonight {
+  background: var(--color-map-later-tonight);
+}
+
+.venue-cluster--other-day {
+  background: var(--color-evening-blue);
+}
+
+.venue-cluster__count {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+
+/* Google Maps–style place panel on the map */
+.venue-map-place-panel {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(22.5rem, 88%);
+  max-width: 26rem;
+  border-right: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+  animation: venue-map-place-panel-enter 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes venue-map-place-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .venue-map-place-panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    max-height: min(72dvh, 560px);
+    border-right: none;
+    border-top: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+    border-radius: 1rem 1rem 0 0;
+    animation: venue-map-place-panel-enter-mobile 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes venue-map-place-panel-enter-mobile {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.map-preview-enter {
+  animation: map-preview-enter 0.22s ease-out;
+}
+
+@keyframes map-preview-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .venue-map-place-panel {
+    animation: none;
+  }
+
+  .map-preview-enter {
+    animation: none;
+  }
+
+  .venue-pin__shape {
+    transition: none;
+  }
+
+  .venue-pin--happening-now .venue-pin__shape {
+    animation: none;
+  }
+}

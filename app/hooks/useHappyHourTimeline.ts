@@ -1,0 +1,211 @@
+import { useEffect, useMemo, useState } from 'react'
+
+import type { DiscoveryFiltersState } from '@/hooks/useDiscoveryFilters'
+import type { VenueDetail } from '@/types/venue'
+import { distanceMiles, formatDistanceMiles } from '@/utils/geo'
+import {
+  getDayName,
+  getDayOfWeekInTimezone,
+  getDealSummaryForSlot,
+  getVenueTimelinePlacementForTimeAt,
+  getVenueTimelinePlacementForViewDay,
+  isViewingToday,
+} from '@/utils/happyHour'
+import {
+  sectionAllowedForStatusFilters,
+  venueMatchesDiscoveryFilters,
+} from '@/utils/discoveryFilters'
+
+export interface TimelineVenueEntry {
+  venue: VenueDetail
+  distanceLabel: string
+  hhWindow: string
+  dealSummary: string
+  badgeTone: 'open' | 'soon' | 'scheduled'
+  badgeLabel: string
+  emphasis: boolean
+}
+
+export interface TimelineSection {
+  id: string
+  title: string
+  sortKey: number
+  emphasis: boolean
+  entries: TimelineVenueEntry[]
+}
+
+export interface UseHappyHourTimelineOptions {
+  venues: VenueDetail[]
+  filters: DiscoveryFiltersState
+  origin?: { latitude: number; longitude: number } | null
+}
+
+export interface UseHappyHourTimelineResult {
+  sections: TimelineSection[]
+  happeningNowCount: number
+  startingSoonCount: number
+  nowLabel: string
+  viewDayLabel: string
+  isLiveDay: boolean
+  filteredVenues: VenueDetail[]
+}
+
+export function useHappyHourTimeline(
+  options: UseHappyHourTimelineOptions,
+): UseHappyHourTimelineResult {
+  const { venues, filters, origin } = options
+  const [now, setNow] = useState(() => new Date())
+
+  const timeZone = venues[0]?.city.timezone ?? 'America/Los_Angeles'
+  const today = getDayOfWeekInTimezone(now, timeZone)
+  const isLiveDay = isViewingToday(filters.viewDay, today)
+
+  useEffect(() => {
+    if (!isLiveDay) {
+      return
+    }
+    const interval = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(interval)
+  }, [isLiveDay])
+
+  const nowLabel = useMemo(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(now)
+  }, [now, timeZone])
+
+  const viewDayLabel = useMemo(() => {
+    if (filters.viewDay === 'any') {
+      return 'Today'
+    }
+    return getDayName(filters.viewDay)
+  }, [filters.viewDay])
+
+  const filteredVenues = useMemo(
+    () => venues.filter((venue) => venueMatchesDiscoveryFilters(venue, filters, now)),
+    [venues, filters, now],
+  )
+
+  const searchQuery = filters.search.trim()
+  const sections = useMemo(() => {
+    const sectionMap = new Map<string, TimelineSection>()
+    const searchOnlyEntries: TimelineVenueEntry[] = []
+
+    for (const venue of filteredVenues) {
+      const placement =
+        filters.timeAtMinutes !== null
+          ? getVenueTimelinePlacementForTimeAt(
+              venue.happy_hour_slots,
+              filters.viewDay,
+              filters.timeAtMinutes,
+              now,
+              venue.city.timezone,
+            )
+          : getVenueTimelinePlacementForViewDay(
+              venue.happy_hour_slots,
+              filters.viewDay,
+              now,
+              venue.city.timezone,
+            )
+
+      const distanceLabel =
+        origin != null
+          ? formatDistanceMiles(
+              distanceMiles(origin.latitude, origin.longitude, venue.lat, venue.lng),
+            )
+          : '—'
+
+      if (!placement) {
+        if (searchQuery) {
+          searchOnlyEntries.push({
+            venue,
+            distanceLabel,
+            hhWindow: '',
+            dealSummary:
+              venue.happy_hour_slots.length > 0
+                ? getDealSummaryForSlot(venue.happy_hour_slots, venue.happy_hour_slots[0])
+                : '',
+            badgeTone: 'scheduled',
+            badgeLabel: 'Search match',
+            emphasis: false,
+          })
+        }
+        continue
+      }
+
+      if (
+        isLiveDay &&
+        !sectionAllowedForStatusFilters(placement.sectionId, filters.statusFilters)
+      ) {
+        continue
+      }
+
+      const entry: TimelineVenueEntry = {
+        venue,
+        distanceLabel,
+        hhWindow: placement.hhWindow,
+        dealSummary: getDealSummaryForSlot(venue.happy_hour_slots, placement.focusSlot),
+        badgeTone: placement.badgeTone,
+        badgeLabel: placement.badgeLabel,
+        emphasis: isLiveDay && placement.sectionId === 'happening_now',
+      }
+
+      const existing = sectionMap.get(placement.sectionId)
+      if (existing) {
+        existing.entries.push(entry)
+      } else {
+        sectionMap.set(placement.sectionId, {
+          id: placement.sectionId,
+          title: placement.sectionTitle,
+          sortKey: placement.sectionSortKey,
+          emphasis: isLiveDay && placement.sectionId === 'happening_now',
+          entries: [entry],
+        })
+      }
+    }
+
+    const sorted = [...sectionMap.values()].sort((a, b) => a.sortKey - b.sortKey)
+
+    if (searchOnlyEntries.length > 0) {
+      searchOnlyEntries.sort((a, b) => a.venue.name.localeCompare(b.venue.name))
+      sorted.unshift({
+        id: 'search_results',
+        title: 'Search results',
+        sortKey: -1,
+        emphasis: false,
+        entries: searchOnlyEntries,
+      })
+    }
+
+    for (const section of sorted) {
+      section.entries.sort((a, b) => {
+        if (a.emphasis !== b.emphasis) {
+          return a.emphasis ? -1 : 1
+        }
+        return a.venue.name.localeCompare(b.venue.name)
+      })
+    }
+
+    return sorted
+  }, [filteredVenues, filters, now, origin, isLiveDay, searchQuery])
+
+  const happeningNowCount = useMemo(
+    () =>
+      isLiveDay
+        ? (sections.find((section) => section.id === 'happening_now')?.entries.length ?? 0)
+        : 0,
+    [sections, isLiveDay],
+  )
+
+  const startingSoonCount = useMemo(
+    () =>
+      isLiveDay
+        ? (sections.find((section) => section.id === 'starting_soon')?.entries.length ?? 0)
+        : 0,
+    [sections, isLiveDay],
+  )
+
+  return { sections, happeningNowCount, startingSoonCount, nowLabel, viewDayLabel, isLiveDay, filteredVenues }
+}
