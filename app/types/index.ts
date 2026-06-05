@@ -15,9 +15,4 @@ export type {
   VenueDetail,
   VenueWithCity,
 } from './venue'
-export type {
-  ClaudeHappyHourExtraction,
-  ScrapeBounds,
-  ScrapeJob,
-  ScrapeJobStatus,
-} from './scrape'
+export type { ScrapeBounds, ScrapeJob, ScrapeJobStatus } from './scrape'

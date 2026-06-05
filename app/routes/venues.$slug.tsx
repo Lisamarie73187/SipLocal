@@ -7,14 +7,13 @@ import { VenueThumbnail } from '@/components/VenueThumbnail/VenueThumbnail'
 import { Button } from '@/components/ui/button'
 import { useVenues } from '@/hooks/useVenues'
 import {
-  formatTime12h,
+  formatHappyHourWindow,
   getHappyHourStatus,
   getVenueCategoryLabel,
   collectVenueCategories,
 } from '@/utils/happyHour'
+import { groupHappyHourSlotsForDisplay } from '@/utils/happyHourSchedule'
 import { cn } from '@/utils'
-
-const DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 export const Route = createFileRoute('/venues/$slug')({
   component: VenueDetailPage,
@@ -49,6 +48,7 @@ function VenueDetailPage() {
   const timeZone = venue.city.timezone
   const status = getHappyHourStatus(venue.happy_hour_slots, now, timeZone)
   const category = getVenueCategoryLabel(collectVenueCategories(venue.happy_hour_slots))
+  const scheduleGroups = groupHappyHourSlotsForDisplay(venue.happy_hour_slots)
 
   return (
     <main className="min-h-dvh bg-background pb-8">
@@ -86,42 +86,26 @@ function VenueDetailPage() {
 
       <section className="px-4 pt-6">
         <h2 className="font-heading text-lg font-semibold text-dark">Happy hour schedule</h2>
-        <ul className="mt-4 space-y-4">
-          {DAY_LABELS.map((dayLabel, dayIndex) => {
-            const daySlots = venue.happy_hour_slots.filter((s) => s.day_of_week === dayIndex)
-            if (daySlots.length === 0) {
-              return null
-            }
-
-            return (
-              <li key={dayLabel} className="rounded-xl border border-border bg-card p-4">
-                <p className="font-medium text-dark">{dayLabel}</p>
-                <ul className="mt-2 space-y-3">
-                  {daySlots.map((slot) => (
-                    <li key={slot.id} className="text-sm">
-                      <p className="font-medium text-foreground">
-                        {formatTime12h(slot.start_time)} – {formatTime12h(slot.end_time)}
-                      </p>
-                      {slot.deal_summary ? (
-                        <p className="mt-1 text-muted-foreground">{slot.deal_summary}</p>
-                      ) : null}
-                      {slot.deals.length > 0 ? (
-                        <ul className="mt-2 space-y-1 text-muted-foreground">
-                          {slot.deals.map((deal) => (
-                            <li key={deal.id}>
-                              {deal.label}
-                              {deal.price_text ? ` · ${deal.price_text}` : ''}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
+        {scheduleGroups.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">No happy hour times listed yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-4">
+            {scheduleGroups.map((group) => (
+              <li key={group.key} className="rounded-xl border border-border bg-card p-4">
+                <p className="font-medium text-dark">{group.dayLabel}</p>
+                <p className="mt-2 text-sm font-medium text-foreground">
+                  {formatHappyHourWindow({
+                    start_time: group.start_time,
+                    end_time: group.end_time,
+                  })}
+                </p>
+                {group.deal_summary ? (
+                  <p className="mt-1 text-sm text-muted-foreground">{group.deal_summary}</p>
+                ) : null}
               </li>
-            )
-          })}
-        </ul>
+            ))}
+          </ul>
+        )}
       </section>
     </main>
   )

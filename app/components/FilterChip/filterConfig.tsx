@@ -1,5 +1,6 @@
 import type { DealFilter, PriceFilter } from '@/hooks/useDiscoveryFilters'
 import type { VenueTypeFilter } from '@/utils/venueType'
+import { VENUE_TYPE_EMOJI, VENUE_TYPE_LABELS } from '@/utils/venueType'
 
 export interface FilterOption<T extends string = string> {
   id: T
@@ -12,13 +13,13 @@ export const DEAL_FILTER_OPTIONS: FilterOption<DealFilter>[] = [
   { id: 'food', label: 'Food', emoji: '🌮' },
 ]
 
-export const VENUE_TYPE_FILTER_OPTIONS: FilterOption<VenueTypeFilter>[] = [
-  { id: 'bar', label: 'Bars', emoji: '🍸' },
-  { id: 'brewery', label: 'Breweries', emoji: '🍺' },
-  { id: 'restaurant', label: 'Restaurants', emoji: '🍽️' },
-  { id: 'wine_bar', label: 'Wine Bars', emoji: '🍷' },
-  { id: 'taproom', label: 'Taprooms', emoji: '🍻' },
-]
+export const VENUE_TYPE_FILTER_OPTIONS: FilterOption<VenueTypeFilter>[] = (
+  Object.keys(VENUE_TYPE_LABELS) as VenueTypeFilter[]
+).map((id) => ({
+  id,
+  label: VENUE_TYPE_LABELS[id],
+  emoji: VENUE_TYPE_EMOJI[id],
+}))
 
 export const PRICE_FILTER_OPTIONS: FilterOption<PriceFilter>[] = [
   { id: '$', label: '$' },

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Map as MapboxMap, Marker as MapboxMarker } from 'mapbox-gl'
 
+import { EventMapPlacePanel } from '@/components/EventMapPlacePanel/EventMapPlacePanel'
 import {
   VENUE_MAP_PLACE_PANEL_OFFSET_PX,
   VenueMapPlacePanel,
@@ -50,10 +51,13 @@ export function VenueMap({
   viewDay = 'any',
   loading = false,
   variant = 'fullscreen',
+  selectedVenuePanel = null,
+  selectedEvent = null,
   selectedDistanceLabel,
   hoveredVenueId = null,
   onHoverVenue,
   onVenueSelect,
+  onClearSelection,
 }: VenueMapProps) {
   const isEmbedded = variant === 'embedded'
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -69,6 +73,8 @@ export function VenueMap({
   onHoverVenueRef.current = onHoverVenue
   const onVenueSelectRef = useRef(onVenueSelect)
   onVenueSelectRef.current = onVenueSelect
+  const onClearSelectionRef = useRef(onClearSelection)
+  onClearSelectionRef.current = onClearSelection
   const hoveredVenueIdRef = useRef(hoveredVenueId)
   hoveredVenueIdRef.current = hoveredVenueId
   const venuesRef = useRef(venues)
@@ -328,7 +334,7 @@ export function VenueMap({
       })
 
       instance.on('click', () => {
-        mapApiRef.current.clearSelection()
+        onClearSelectionRef.current?.() ?? mapApiRef.current.clearSelection()
       })
 
       mapRef.current = instance
@@ -470,12 +476,19 @@ export function VenueMap({
 
       {mapStatus === 'ready' && isLiveDay ? <MapLegend /> : null}
 
-      {selectedVenue ? (
-        <VenueMapPlacePanel
-          venue={selectedVenue}
+      {selectedEvent ? (
+        <EventMapPlacePanel
+          event={selectedEvent}
           viewDay={viewDay}
           distanceLabel={selectedDistanceLabel}
-          onClose={map.clearSelection}
+          onClose={onClearSelection ?? map.clearSelection}
+        />
+      ) : selectedVenuePanel ? (
+        <VenueMapPlacePanel
+          venue={selectedVenuePanel}
+          viewDay={viewDay}
+          distanceLabel={selectedDistanceLabel}
+          onClose={onClearSelection ?? map.clearSelection}
         />
       ) : null}
     </div>

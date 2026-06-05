@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { MapPin, Navigation, Search, X } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { CircleUser, Loader2, MapPin, Navigation, Search, X } from 'lucide-react'
+
+import { useAccountLink } from '@/hooks/useAccountLink'
 
 import type { UseDiscoveryFiltersResult } from '@/hooks/useDiscoveryFilters'
 import { cn } from '@/utils'
@@ -26,13 +29,30 @@ export function DiscoveryHeader({
   isLiveDay,
 }: DiscoveryHeaderProps) {
   const { applied, setSearch } = filters
+  const searchPlaceholder =
+    applied.contentType === 'events'
+      ? 'Search events, venues, or trivia…'
+      : 'Search venues, vibes, or deals…'
   const [cityQuery, setCityQuery] = useState(cityName)
+  const accountLink = useAccountLink()
   const hasSearch = applied.search.trim().length > 0
 
   return (
     <header className="discovery-header shrink-0">
       <div className="discovery-content-inset pb-5">
-        <div className="discovery-header__brand pt-6 pb-5">
+        <div className="discovery-header__brand relative pt-6 pb-5">
+          <Link
+            to={accountLink.href}
+            search={accountLink.search}
+            className="absolute top-6 right-0 flex size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-dark shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
+            aria-label={accountLink.label}
+          >
+            {accountLink.loading ? (
+              <Loader2 className="size-5 animate-spin" aria-hidden />
+            ) : (
+              <CircleUser className="size-5" strokeWidth={1.75} />
+            )}
+          </Link>
           <SipSocialLogo variant="full" />
         </div>
 
@@ -44,7 +64,7 @@ export function DiscoveryHeader({
                 type="search"
                 value={applied.search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search venues, vibes, or deals..."
+                placeholder={searchPlaceholder}
                 className="discovery-header__input h-11 w-full rounded-xl border border-border/70 bg-card pr-9 pl-10 text-sm text-dark shadow-sm placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               {hasSearch ? (

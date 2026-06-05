@@ -11,8 +11,8 @@ import type { ViewDayFilter } from '@/hooks/useDiscoveryFilters'
 import type { VenueDetail } from '@/types/venue'
 import { getDealChipsForSlot, getTodayDealChips } from '@/utils/dealChips'
 import { getVenueOverlayStatusForVenue } from '@/utils/venueOverlayStatus'
-import type { VenueTypeFilter } from '@/utils/venueType'
-import { inferVenueType } from '@/utils/venueType'
+import { getVenueDisplaySubtitle } from '@/utils/venueDisplay'
+import { getVenueTrustMeta } from '@/utils/venueTrust'
 import { cn } from '@/utils'
 
 /** Pixel offset so the selected pin sits in the visible map beside the panel. */
@@ -23,23 +23,6 @@ export interface VenueMapPlacePanelProps {
   viewDay: ViewDayFilter
   distanceLabel?: string
   onClose: () => void
-}
-
-const VENUE_TYPE_LABELS: Record<VenueTypeFilter, string> = {
-  bar: 'Bar',
-  brewery: 'Brewery',
-  restaurant: 'Restaurant',
-  wine_bar: 'Wine bar',
-  taproom: 'Taproom',
-}
-
-function getVenueSubtitle(venue: VenueDetail): string {
-  if (venue.description?.trim()) {
-    return venue.description.trim()
-  }
-
-  const type = inferVenueType(venue)
-  return type ? VENUE_TYPE_LABELS[type] : 'Happy hour spot'
 }
 
 export function VenueMapPlacePanel({
@@ -60,9 +43,10 @@ export function VenueMapPlacePanel({
     ? getDealChipsForSlot(venue.happy_hour_slots, placement.focusSlot, 6)
     : getTodayDealChips(venue.happy_hour_slots, now, timeZone, 6)
   const hhWindow = placement?.hhWindow ?? null
-  const subtitle = getVenueSubtitle(venue)
+  const subtitle = getVenueDisplaySubtitle(venue)
   const isOpenNow = pinStatus === 'happening_now'
   const showStartsInPill = isLiveDay && pinStatus === 'starting_soon'
+  const trustMeta = getVenueTrustMeta(venue, placement?.focusSlot)
 
   useEffect(() => {
     closeRef.current?.focus()
@@ -98,7 +82,7 @@ export function VenueMapPlacePanel({
             <h2 className="font-heading text-lg font-bold text-dark">{venue.name}</h2>
             <VenuePriceLevel level={venue.price_level} className="text-sm" />
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+          <p className="mt-1 line-clamp-3 text-sm leading-snug text-muted-foreground">{subtitle}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {isOpenNow ? (
               <NowBadge />
@@ -137,7 +121,11 @@ export function VenueMapPlacePanel({
 
         <VenueMapOverlayDirections venue={venue} />
 
-        <VenueExpandedDetails venue={venue} className="mt-4 border-t border-border pt-4" />
+        <VenueExpandedDetails
+          venue={venue}
+          trustMeta={trustMeta}
+          className="mt-4 border-t border-border pt-4"
+        />
       </div>
     </aside>
   )

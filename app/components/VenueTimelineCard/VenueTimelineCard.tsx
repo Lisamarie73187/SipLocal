@@ -3,10 +3,8 @@ import { Clock, MapPin } from 'lucide-react'
 import { NowBadge } from '@/components/NowBadge/NowBadge'
 import { VenuePriceLevel } from '@/components/VenuePriceLevel/VenuePriceLevel'
 import type { TimelineVenueEntry } from '@/hooks/useHappyHourTimeline'
-import type { VenueDetail } from '@/types/venue'
-import type { VenueTypeFilter } from '@/utils/venueType'
 import { isStartsInBadgeLabel } from '@/utils/happyHour'
-import { inferVenueType } from '@/utils/venueType'
+import { getVenueDisplaySubtitle } from '@/utils/venueDisplay'
 import { cn } from '@/utils'
 
 export interface VenueTimelineCardProps {
@@ -17,23 +15,6 @@ export interface VenueTimelineCardProps {
   onSelect: () => void
   onHover: () => void
   onHoverEnd: () => void
-}
-
-const VENUE_TYPE_LABELS: Record<VenueTypeFilter, string> = {
-  bar: 'Bar',
-  brewery: 'Brewery',
-  restaurant: 'Restaurant',
-  wine_bar: 'Wine bar',
-  taproom: 'Taproom',
-}
-
-function getVenueSubtitle(venue: VenueDetail): string {
-  if (venue.description?.trim()) {
-    return venue.description.trim()
-  }
-
-  const type = inferVenueType(venue)
-  return type ? VENUE_TYPE_LABELS[type] : 'Happy hour spot'
 }
 
 export function VenueTimelineCard({
@@ -49,7 +30,7 @@ export function VenueTimelineCard({
   const isOpenNow = badgeTone === 'open'
   const showScheduleBadge =
     !isOpenNow && badgeLabel && (!isStartsInBadgeLabel(badgeLabel) || isLiveDay)
-  const subtitle = getVenueSubtitle(venue)
+  const subtitle = getVenueDisplaySubtitle(venue)
 
   return (
     <button

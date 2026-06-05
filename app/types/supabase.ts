@@ -81,6 +81,81 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          city_id: string
+          confidence: Database["public"]["Enums"]["scrape_confidence"] | null
+          created_at: string
+          day_of_week: number | null
+          description: string | null
+          end_time: string | null
+          event_date: string | null
+          event_type: Database["public"]["Enums"]["event_type"]
+          id: string
+          is_published: boolean
+          last_scraped_at: string | null
+          last_verified_at: string | null
+          source_urls: string[]
+          start_time: string
+          title: string
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          city_id: string
+          confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
+          created_at?: string
+          day_of_week?: number | null
+          description?: string | null
+          end_time?: string | null
+          event_date?: string | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          is_published?: boolean
+          last_scraped_at?: string | null
+          last_verified_at?: string | null
+          source_urls?: string[]
+          start_time: string
+          title: string
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          city_id?: string
+          confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
+          created_at?: string
+          day_of_week?: number | null
+          description?: string | null
+          end_time?: string | null
+          event_date?: string | null
+          event_type?: Database["public"]["Enums"]["event_type"]
+          id?: string
+          is_published?: boolean
+          last_scraped_at?: string | null
+          last_verified_at?: string | null
+          source_urls?: string[]
+          start_time?: string
+          title?: string
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -254,9 +329,12 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
+          job_kind: string
           max_venues: number
+          research_targets: Json | null
           started_at: string | null
           status: Database["public"]["Enums"]["scrape_job_status"]
+          target_venue_ids: string[] | null
           updated_at: string
           venues_found: number
           venues_with_happy_hours: number
@@ -270,9 +348,12 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          job_kind?: string
           max_venues?: number
+          research_targets?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["scrape_job_status"]
+          target_venue_ids?: string[] | null
           updated_at?: string
           venues_found?: number
           venues_with_happy_hours?: number
@@ -286,9 +367,12 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          job_kind?: string
           max_venues?: number
+          research_targets?: Json | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["scrape_job_status"]
+          target_venue_ids?: string[] | null
           updated_at?: string
           venues_found?: number
           venues_with_happy_hours?: number
@@ -304,10 +388,86 @@ export type Database = {
           },
         ]
       }
+      scrape_revisions: {
+        Row: {
+          created_at: string
+          id: string
+          proposed_confidence:
+            | Database["public"]["Enums"]["scrape_confidence"]
+            | null
+          proposed_deals: Json
+          proposed_description: string | null
+          proposed_slots: Json
+          proposed_source_urls: Json
+          research_events_count: number
+          reviewed_at: string | null
+          reviewed_by: string | null
+          scrape_error: string | null
+          scrape_job_id: string
+          status: Database["public"]["Enums"]["scrape_revision_status"]
+          updated_at: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          proposed_confidence?:
+            | Database["public"]["Enums"]["scrape_confidence"]
+            | null
+          proposed_deals?: Json
+          proposed_description?: string | null
+          proposed_slots?: Json
+          proposed_source_urls?: Json
+          research_events_count?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scrape_error?: string | null
+          scrape_job_id: string
+          status?: Database["public"]["Enums"]["scrape_revision_status"]
+          updated_at?: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          proposed_confidence?:
+            | Database["public"]["Enums"]["scrape_confidence"]
+            | null
+          proposed_deals?: Json
+          proposed_description?: string | null
+          proposed_slots?: Json
+          proposed_source_urls?: Json
+          research_events_count?: number
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          scrape_error?: string | null
+          scrape_job_id?: string
+          status?: Database["public"]["Enums"]["scrape_revision_status"]
+          updated_at?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrape_revisions_scrape_job_id_fkey"
+            columns: ["scrape_job_id"]
+            isOneToOne: false
+            referencedRelation: "scrape_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scrape_revisions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address_line1: string
           address_line2: string | null
+          archived_at: string | null
           city_id: string
           created_at: string
           data_status: Database["public"]["Enums"]["venue_data_status"]
@@ -326,11 +486,15 @@ export type Database = {
           place_id: string | null
           postal_code: string | null
           price_level: Database["public"]["Enums"]["venue_price_level"]
+          schedule_cadence:
+            | Database["public"]["Enums"]["schedule_cadence"]
+            | null
           scrape_content_hash: string | null
           scraped_city: string | null
           scraped_zip: string | null
           slug: string
           updated_at: string
+          venue_type: Database["public"]["Enums"]["venue_type"] | null
           website_url: string | null
           yelp_id: string | null
           yelp_rating: number | null
@@ -339,6 +503,7 @@ export type Database = {
         Insert: {
           address_line1: string
           address_line2?: string | null
+          archived_at?: string | null
           city_id: string
           created_at?: string
           data_status?: Database["public"]["Enums"]["venue_data_status"]
@@ -357,11 +522,15 @@ export type Database = {
           place_id?: string | null
           postal_code?: string | null
           price_level?: Database["public"]["Enums"]["venue_price_level"]
+          schedule_cadence?:
+            | Database["public"]["Enums"]["schedule_cadence"]
+            | null
           scrape_content_hash?: string | null
           scraped_city?: string | null
           scraped_zip?: string | null
           slug: string
           updated_at?: string
+          venue_type?: Database["public"]["Enums"]["venue_type"] | null
           website_url?: string | null
           yelp_id?: string | null
           yelp_rating?: number | null
@@ -370,6 +539,7 @@ export type Database = {
         Update: {
           address_line1?: string
           address_line2?: string | null
+          archived_at?: string | null
           city_id?: string
           created_at?: string
           data_status?: Database["public"]["Enums"]["venue_data_status"]
@@ -388,11 +558,15 @@ export type Database = {
           place_id?: string | null
           postal_code?: string | null
           price_level?: Database["public"]["Enums"]["venue_price_level"]
+          schedule_cadence?:
+            | Database["public"]["Enums"]["schedule_cadence"]
+            | null
           scrape_content_hash?: string | null
           scraped_city?: string | null
           scraped_zip?: string | null
           slug?: string
           updated_at?: string
+          venue_type?: Database["public"]["Enums"]["venue_type"] | null
           website_url?: string | null
           yelp_id?: string | null
           yelp_rating?: number | null
@@ -417,15 +591,30 @@ export type Database = {
     }
     Enums: {
       deal_category: "drinks" | "food" | "both" | "other"
+      event_type: "trivia" | "live_music" | "special" | "other"
       happy_hour_data_status: "live" | "pending_review" | "flagged"
+      schedule_cadence: "weekly" | "monthly" | "annually" | "seasonally"
       scrape_confidence: "high" | "medium" | "low"
       scrape_job_status: "pending" | "running" | "complete" | "failed"
+      scrape_revision_status: "pending_review" | "approved" | "rejected"
       venue_data_status:
         | "live"
         | "pending_review"
         | "no_happy_hour_found"
         | "flagged"
+        | "discovered"
       venue_price_level: "$" | "$$" | "$$$"
+      venue_type:
+        | "bar"
+        | "brewery"
+        | "taproom"
+        | "restaurant"
+        | "gastropub"
+        | "wine_bar"
+        | "cocktail_bar"
+        | "sports_bar"
+        | "pub"
+        | "distillery"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -557,16 +746,32 @@ export const Constants = {
   public: {
     Enums: {
       deal_category: ["drinks", "food", "both", "other"],
+      event_type: ["trivia", "live_music", "special", "other"],
       happy_hour_data_status: ["live", "pending_review", "flagged"],
+      schedule_cadence: ["weekly", "monthly", "annually", "seasonally"],
       scrape_confidence: ["high", "medium", "low"],
       scrape_job_status: ["pending", "running", "complete", "failed"],
+      scrape_revision_status: ["pending_review", "approved", "rejected"],
       venue_data_status: [
         "live",
         "pending_review",
         "no_happy_hour_found",
         "flagged",
+        "discovered",
       ],
       venue_price_level: ["$", "$$", "$$$"],
+      venue_type: [
+        "bar",
+        "brewery",
+        "taproom",
+        "restaurant",
+        "gastropub",
+        "wine_bar",
+        "cocktail_bar",
+        "sports_bar",
+        "pub",
+        "distillery",
+      ],
     },
   },
 } as const

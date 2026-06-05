@@ -68,7 +68,7 @@ alter table public.venues
   add column scrape_content_hash text;
 
 comment on column public.venues.place_id is 'Google Places ID; unique when set';
-comment on column public.venues.scrape_content_hash is 'Normalized happy-hour payload hash for weekly refresh dedupe';
+comment on column public.venues.scrape_content_hash is 'Normalized happy-hour payload hash for scheduled refresh dedupe';
 
 create unique index venues_place_id_unique_idx
   on public.venues (place_id)

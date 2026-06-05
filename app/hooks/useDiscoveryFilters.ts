@@ -7,11 +7,13 @@ export type ViewDayFilter = 'any' | DayOfWeek
 export type DealFilter = 'drinks' | 'food'
 export type PriceFilter = '$' | '$$' | '$$$'
 export type StatusFilter = 'happening_now' | 'starting_soon'
+export type DiscoveryContentType = 'happy_hours' | 'events'
 
 export const TIME_FILTER_MIN_MINUTES = 10 * 60
 export const TIME_FILTER_MAX_MINUTES = 23 * 60
 
 export interface DiscoveryFiltersState {
+  contentType: DiscoveryContentType
   search: string
   viewDay: ViewDayFilter
   timeAtMinutes: number | null
@@ -27,6 +29,7 @@ export interface UseDiscoveryFiltersResult {
   toggleFiltersExpanded: () => void
   closeFiltersExpanded: () => void
   setSearch: (search: string) => void
+  setContentType: (contentType: DiscoveryContentType) => void
   setAppliedViewDay: (viewDay: ViewDayFilter) => void
   setAppliedTimeAt: (timeAtMinutes: number | null) => void
   clearAppliedTime: () => void
@@ -39,14 +42,24 @@ export interface UseDiscoveryFiltersResult {
   hasActiveFilters: boolean
 }
 
+export const DEFAULT_STATUS_FILTERS: StatusFilter[] = ['happening_now', 'starting_soon']
+
 export const DEFAULT_FILTERS: DiscoveryFiltersState = {
+  contentType: 'happy_hours',
   search: '',
   viewDay: 'any',
   timeAtMinutes: null,
-  statusFilters: [],
+  statusFilters: [...DEFAULT_STATUS_FILTERS],
   deals: [],
   venueTypes: [],
   priceLevels: [],
+}
+
+function statusFiltersMatchDefault(statusFilters: StatusFilter[]): boolean {
+  if (statusFilters.length !== DEFAULT_STATUS_FILTERS.length) {
+    return false
+  }
+  return DEFAULT_STATUS_FILTERS.every((status) => statusFilters.includes(status))
 }
 
 function cloneFilters(filters: DiscoveryFiltersState): DiscoveryFiltersState {
@@ -65,10 +78,11 @@ function countChipFilters(filters: DiscoveryFiltersState): number {
 
 function hasAnyActiveFilters(filters: DiscoveryFiltersState): boolean {
   return (
+    filters.contentType !== 'happy_hours' ||
     filters.search.trim().length > 0 ||
     filters.viewDay !== 'any' ||
     filters.timeAtMinutes !== null ||
-    filters.statusFilters.length > 0 ||
+    !statusFiltersMatchDefault(filters.statusFilters) ||
     filters.deals.length > 0 ||
     filters.venueTypes.length > 0 ||
     filters.priceLevels.length > 0
@@ -91,6 +105,29 @@ export function useDiscoveryFilters(): UseDiscoveryFiltersResult {
 
   const setSearch = useCallback((search: string): void => {
     setApplied((current) => ({ ...current, search }))
+  }, [])
+
+  const setContentType = useCallback((contentType: DiscoveryContentType): void => {
+    setApplied((current) => {
+      if (current.contentType === contentType) {
+        return current
+      }
+
+      const next: DiscoveryFiltersState = {
+        ...current,
+        contentType,
+      }
+
+      if (contentType === 'events') {
+        next.deals = []
+      }
+
+      if (contentType === 'happy_hours') {
+        // keep existing happy-hour filters
+      }
+
+      return next
+    })
   }, [])
 
   const setAppliedViewDay = useCallback((viewDay: ViewDayFilter): void => {
@@ -173,6 +210,7 @@ export function useDiscoveryFilters(): UseDiscoveryFiltersResult {
     toggleFiltersExpanded,
     closeFiltersExpanded,
     setSearch,
+    setContentType,
     setAppliedViewDay,
     setAppliedTimeAt,
     clearAppliedTime,

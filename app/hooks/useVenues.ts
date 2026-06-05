@@ -39,7 +39,7 @@ function normalizeVenues(
     ...venue,
     city,
     happy_hour_slots: (venue.happy_hour_slots ?? [])
-      .filter((slot) => slot.is_active)
+      .filter((slot) => slot.is_active && slot.data_status === 'live')
       .map((slot) => {
         const { happy_hour_deals, ...rest } = slot
         return {
@@ -79,6 +79,9 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesResult {
         .from('venues')
         .select(VENUE_SELECT)
         .eq('city_id', city.id)
+        .eq('data_status', 'live')
+        .eq('is_published', true)
+        .is('archived_at', null)
         .order('name')
 
       if (fetchError) {

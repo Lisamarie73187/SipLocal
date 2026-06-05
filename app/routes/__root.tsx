@@ -1,4 +1,4 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
@@ -19,7 +19,22 @@ export const Route = createRootRoute({
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
   component: RootLayout,
+  notFoundComponent: RootNotFound,
 })
+
+function RootNotFound() {
+  return (
+    <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
+      <h1 className="font-heading text-2xl font-semibold text-dark">Page not found</h1>
+      <p className="text-sm text-muted-foreground">
+        This link does not match a page in SipLocal.
+      </p>
+      <Link to="/" className="text-sm font-medium text-primary hover:underline">
+        Back to discovery
+      </Link>
+    </main>
+  )
+}
 
 function RootLayout() {
   return (
@@ -27,7 +42,7 @@ function RootLayout() {
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-dvh overflow-hidden bg-background font-sans text-foreground antialiased">
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <Outlet />
         <TanStackDevtools
           config={{ position: 'bottom-right' }}

@@ -9,54 +9,164 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
+import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as AdminVenuesIndexRouteImport } from './routes/admin.venues.index'
+import { Route as AdminVenuesNewRouteImport } from './routes/admin.venues.new'
+import { Route as AdminVenuesVenueIdRouteImport } from './routes/admin.venues.$venueId'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const VenuesSlugRoute = VenuesSlugRouteImport.update({
   id: '/venues/$slug',
   path: '/venues/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminVenuesRoute = AdminVenuesRouteImport.update({
+  id: '/venues',
+  path: '/venues',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVenuesIndexRoute = AdminVenuesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminVenuesRoute,
+} as any)
+const AdminVenuesNewRoute = AdminVenuesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AdminVenuesRoute,
+} as any)
+const AdminVenuesVenueIdRoute = AdminVenuesVenueIdRouteImport.update({
+  id: '/$venueId',
+  path: '/$venueId',
+  getParentRoute: () => AdminVenuesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/login': typeof LoginRoute
+  '/admin/venues': typeof AdminVenuesRouteWithChildren
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/venues/new': typeof AdminVenuesNewRoute
+  '/admin/venues/': typeof AdminVenuesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/venues/new': typeof AdminVenuesNewRoute
+  '/admin/venues': typeof AdminVenuesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/login': typeof LoginRoute
+  '/admin/venues': typeof AdminVenuesRouteWithChildren
   '/venues/$slug': typeof VenuesSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/venues/new': typeof AdminVenuesNewRoute
+  '/admin/venues/': typeof AdminVenuesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/venues/$slug'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/admin/venues'
+    | '/venues/$slug'
+    | '/admin/'
+    | '/admin/venues/$venueId'
+    | '/admin/venues/new'
+    | '/admin/venues/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/venues/$slug'
-  id: '__root__' | '/' | '/venues/$slug'
+  to:
+    | '/'
+    | '/login'
+    | '/venues/$slug'
+    | '/admin'
+    | '/admin/venues/$venueId'
+    | '/admin/venues/new'
+    | '/admin/venues'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/admin/venues'
+    | '/venues/$slug'
+    | '/admin/'
+    | '/admin/venues/$venueId'
+    | '/admin/venues/new'
+    | '/admin/venues/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  LoginRoute: typeof LoginRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/venues/$slug': {
       id: '/venues/$slug'
@@ -65,11 +175,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VenuesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/venues': {
+      id: '/admin/venues'
+      path: '/venues'
+      fullPath: '/admin/venues'
+      preLoaderRoute: typeof AdminVenuesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/venues/': {
+      id: '/admin/venues/'
+      path: '/'
+      fullPath: '/admin/venues/'
+      preLoaderRoute: typeof AdminVenuesIndexRouteImport
+      parentRoute: typeof AdminVenuesRoute
+    }
+    '/admin/venues/new': {
+      id: '/admin/venues/new'
+      path: '/new'
+      fullPath: '/admin/venues/new'
+      preLoaderRoute: typeof AdminVenuesNewRouteImport
+      parentRoute: typeof AdminVenuesRoute
+    }
+    '/admin/venues/$venueId': {
+      id: '/admin/venues/$venueId'
+      path: '/$venueId'
+      fullPath: '/admin/venues/$venueId'
+      preLoaderRoute: typeof AdminVenuesVenueIdRouteImport
+      parentRoute: typeof AdminVenuesRoute
+    }
   }
 }
 
+interface AdminVenuesRouteChildren {
+  AdminVenuesVenueIdRoute: typeof AdminVenuesVenueIdRoute
+  AdminVenuesNewRoute: typeof AdminVenuesNewRoute
+  AdminVenuesIndexRoute: typeof AdminVenuesIndexRoute
+}
+
+const AdminVenuesRouteChildren: AdminVenuesRouteChildren = {
+  AdminVenuesVenueIdRoute: AdminVenuesVenueIdRoute,
+  AdminVenuesNewRoute: AdminVenuesNewRoute,
+  AdminVenuesIndexRoute: AdminVenuesIndexRoute,
+}
+
+const AdminVenuesRouteWithChildren = AdminVenuesRoute._addFileChildren(
+  AdminVenuesRouteChildren,
+)
+
+interface AdminRouteChildren {
+  AdminVenuesRoute: typeof AdminVenuesRouteWithChildren
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminVenuesRoute: AdminVenuesRouteWithChildren,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  LoginRoute: LoginRoute,
   VenuesSlugRoute: VenuesSlugRoute,
 }
 export const routeTree = rootRouteImport

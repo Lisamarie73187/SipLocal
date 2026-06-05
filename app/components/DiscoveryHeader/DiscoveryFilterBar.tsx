@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Calendar, Clock, SlidersHorizontal, Sparkles, Timer, X } from 'lucide-react'
 
+import { ContentTypeToggle } from '@/components/ContentTypeToggle/ContentTypeToggle'
 import { FilterChip } from '@/components/FilterChip/FilterChip'
 import {
   DEAL_FILTER_OPTIONS,
@@ -53,6 +54,7 @@ export function DiscoveryFilterBar({
     toggleAppliedDeal,
     toggleAppliedVenueType,
     toggleAppliedPriceLevel,
+    setContentType,
   } = filters
 
   const [dayPopoverOpen, setDayPopoverOpen] = useState(false)
@@ -62,6 +64,7 @@ export function DiscoveryFilterBar({
   const dayAnchorRef = useRef<HTMLDivElement>(null)
   const timeAnchorRef = useRef<HTMLDivElement>(null)
 
+  const showHappyHourFilters = applied.contentType === 'happy_hours'
   const happeningNowActive = applied.statusFilters.includes('happening_now')
   const startingSoonActive = applied.statusFilters.includes('starting_soon')
   const dayTimeDisabled = happeningNowActive
@@ -112,8 +115,19 @@ export function DiscoveryFilterBar({
     openTimePopover()
   }
 
+  const resultLabel =
+    applied.contentType === 'events'
+      ? resultCount === 1
+        ? 'event'
+        : 'events'
+      : resultCount === 1
+        ? 'venue'
+        : 'venues'
+
   return (
-    <div className="discovery-filter-bar">
+    <div className="discovery-filter-bar space-y-3">
+      <ContentTypeToggle value={applied.contentType} onChange={setContentType} />
+
       <div className="discovery-filter-bar__primary">
         <div className="discovery-filter-bar__quick flex min-w-0 flex-wrap items-center gap-2">
           {isLiveDay ? (
@@ -271,30 +285,32 @@ export function DiscoveryFilterBar({
         </div>
 
         <p className="discovery-filter-bar__count shrink-0 text-sm font-medium text-muted-foreground tabular-nums">
-          {resultCount} {resultCount === 1 ? 'venue' : 'venues'}
+          {resultCount} {resultLabel}
         </p>
       </div>
 
       {isFiltersExpanded ? (
         <div className="discovery-filter-bar__expanded mt-3 rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
           <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:gap-x-10">
-            <div className="text-left">
-              <p className="text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
-                Deal type
-              </p>
-              <div className="mt-3 flex flex-wrap justify-start gap-2">
-                {DEAL_FILTER_OPTIONS.map((option) => (
-                  <FilterChip
-                    key={option.id}
-                    variant="pill"
-                    label={option.label}
-                    emoji={option.emoji}
-                    active={applied.deals.includes(option.id)}
-                    onClick={() => toggleAppliedDeal(option.id)}
-                  />
-                ))}
+            {showHappyHourFilters ? (
+              <div className="text-left">
+                <p className="text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
+                  Deal type
+                </p>
+                <div className="mt-3 flex flex-wrap justify-start gap-2">
+                  {DEAL_FILTER_OPTIONS.map((option) => (
+                    <FilterChip
+                      key={option.id}
+                      variant="pill"
+                      label={option.label}
+                      emoji={option.emoji}
+                      active={applied.deals.includes(option.id)}
+                      onClick={() => toggleAppliedDeal(option.id)}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
             <div className="text-left">
               <p className="text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
                 Venue type
