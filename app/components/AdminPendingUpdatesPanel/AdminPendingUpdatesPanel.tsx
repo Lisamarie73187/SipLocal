@@ -91,9 +91,13 @@ function PendingVenueUpdateList({ updates }: { updates: AdminPendingVenueUpdate[
 
 export interface AdminPendingUpdatesPanelProps {
   citySlug?: string
+  showHeader?: boolean
 }
 
-export function AdminPendingUpdatesPanel({ citySlug = 'bend-or' }: AdminPendingUpdatesPanelProps) {
+export function AdminPendingUpdatesPanel({
+  citySlug = 'bend-or',
+  showHeader = true,
+}: AdminPendingUpdatesPanelProps) {
   const [activeTab, setActiveTab] = useState<ReviewTab>('venue_updates')
   const [managerUpdates, setManagerUpdates] = useState<AdminPendingVenueUpdate[]>([])
   const [staffReview, setStaffReview] = useState<AdminPendingVenueUpdate[]>([])
@@ -208,20 +212,22 @@ export function AdminPendingUpdatesPanel({ citySlug = 'bend-or' }: AdminPendingU
 
   return (
     <section className="space-y-6 rounded-xl border border-secondary/35 bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-heading text-lg font-semibold text-dark">Pending updates</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review manager edits, your discovery queue, and customer-submitted menu photos.
-          </p>
+      {showHeader ? (
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-lg font-semibold text-dark">Pending updates</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Review manager edits, your discovery queue, and customer-submitted menu photos.
+            </p>
+          </div>
+          <Link
+            to="/admin/venues"
+            className="min-h-9 text-sm font-medium text-primary hover:underline"
+          >
+            All venues
+          </Link>
         </div>
-        <Link
-          to="/admin/venues"
-          className="min-h-9 text-sm font-medium text-primary hover:underline"
-        >
-          All venues
-        </Link>
-      </div>
+      ) : null}
 
       <div
         className="inline-flex rounded-xl border border-border/70 bg-muted/40 p-1"

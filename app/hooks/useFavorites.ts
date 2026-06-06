@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 
@@ -37,8 +38,11 @@ export function useFavoritesState(): UseFavoritesResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [togglingVenueId, setTogglingVenueId] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const fetchFavorites = useCallback(async (): Promise<void> => {
+    const requestId = ++requestIdRef.current
+
     if (!user) {
       setFavoriteVenueIds([])
       setError(null)
@@ -60,20 +64,32 @@ export function useFavoritesState(): UseFavoritesResult {
         throw fetchError
       }
 
+      if (requestId !== requestIdRef.current) {
+        return
+      }
+
       setFavoriteVenueIds((data ?? []).map((row) => row.venue_id))
     } catch (caught) {
+      if (requestId !== requestIdRef.current) {
+        return
+      }
       const nextError =
         caught instanceof Error ? caught : new Error('Failed to load favorites')
       logger.error('useFavorites fetch failed', nextError)
       setError(nextError)
       setFavoriteVenueIds([])
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [user])
 
   useEffect(() => {
     void fetchFavorites()
+    return () => {
+      requestIdRef.current++
+    }
   }, [fetchFavorites])
 
   const favoriteIdSet = useMemo(() => new Set(favoriteVenueIds), [favoriteVenueIds])

@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button'
 import { HappyHourPastePanel } from '@/components/HappyHourPastePanel/HappyHourPastePanel'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import {
+  setVenueCommunityVerified,
+  setVenueHappyHourConfidence,
   setVenueScheduleCadence,
-  verifyVenueByCommunity,
-  verifyVenueByPerson,
 } from '@/server/adminDiscover'
 import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
 import type { AdminVenueEditorSlot } from '@/server/adminVenues'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
-import type { DayOfWeek } from '@/types/venue'
+import type { DayOfWeek, ScrapeConfidence } from '@/types/venue'
 import { expandGroupedSlotsForSave, groupSlotsForEditor } from '@/utils/happyHourEditorSlots'
 import type { ParsedHappyHourSlot } from '@/utils/parseHappyHourPaste'
 import { slugifyVenueName } from '@/utils/slug'
@@ -23,12 +23,11 @@ import { validateVenueBeforeSave, venueStatusMismatch } from '@/utils/venueDataS
 import {
   formatSourceCountLabel,
   formatTrustFreshnessLabel,
-  getConfidenceBadgeLabel,
-  isUnverifiedConfidence,
   rollupSlotConfidence,
   SCRAPE_CONFIDENCE_ADMIN_OPTIONS,
 } from '@/utils/venueTrust'
 import { VENUE_TYPE_ADMIN_OPTIONS } from '@/utils/venueType'
+import { buildAdminVenuesListSearch } from '@/utils/adminVenuesListSearch'
 import { cn } from '@/utils'
 
 import { AdminVenueEventsSection } from './AdminVenueEventsSection'
@@ -137,13 +136,14 @@ export function AdminVenueEditor({
   cityTimezone = 'America/Los_Angeles',
   initialEvents = [],
   onEventsReload,
+  returnListSearch,
 }: AdminVenueEditorProps) {
   const navigate = useNavigate()
   const [venue, setVenue] = useState<VenueFormState>(() => venueToFormState(initialVenue))
   const [slots, setSlots] = useState<SlotFormState[]>(() => slotsToFormState(initialSlots))
   const [saving, setSaving] = useState(false)
-  const [verifying, setVerifying] = useState(false)
-  const [communityVerifying, setCommunityVerifying] = useState(false)
+  const [confidenceSaving, setConfidenceSaving] = useState(false)
+  const [communitySaving, setCommunitySaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [autoSlug, setAutoSlug] = useState(mode === 'create')
   const editorTrustConfidence = useMemo(() => rollupSlotConfidence(slots), [slots])
@@ -168,7 +168,7 @@ export function AdminVenueEditor({
     return editorSourceUrls.filter((url) => url !== website).length
   }, [editorSourceUrls, venue.website_url])
   const editorFreshnessLabel = formatEditorFreshness(venue)
-  const editorUnverified = isUnverifiedConfidence(editorTrustConfidence)
+  const isCommunityVerified = Boolean(venue.community_verified_at)
   const citySlug =
     initialCities.find((city) => city.id === venue.city_id)?.slug ?? 'bend-or'
 
@@ -272,9 +272,6 @@ export function AdminVenueEditor({
         },
       })
 
-      const citySlug =
-        initialCities.find((city) => city.id === venue.city_id)?.slug ?? 'bend-or'
-
       const mapNote = result.mapVisible
         ? ' It is visible on the public map.'
         : result.isPublished && result.dataStatus === 'live'
@@ -284,12 +281,13 @@ export function AdminVenueEditor({
             : ''
 
       await navigate({
-        to: '/admin/venues/',
-        search: {
-          saved: result.venueId,
+        to: '/admin/venues',
+        search: buildAdminVenuesListSearch({
+          ...returnListSearch,
           city: citySlug,
           notice: `Saved as ${result.dataStatus.replace(/_/g, ' ')} (${result.slotCount} slot${result.slotCount === 1 ? '' : 's'}).${mapNote}`,
-        },
+        }),
+        resetScroll: false,
       })
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to save venue')
@@ -573,79 +571,84 @@ export function AdminVenueEditor({
             ) : null}
           </div>
           {slots.length > 0 ? (
-            <span
-              className={cn(
-                'venue-trust-footer__badge inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase',
-                editorUnverified
-                  ? 'venue-trust-footer__badge--unverified'
-                  : 'venue-trust-footer__badge--verified',
-              )}
-            >
-              {getConfidenceBadgeLabel(editorTrustConfidence)}
-            </span>
+            <label className="block space-y-2">
+              <span className="text-xs font-medium text-dark">Confidence</span>
+              <select
+                value={editorTrustConfidence ?? ''}
+                disabled={confidenceSaving}
+                onChange={(event) => {
+                  const confidence =
+                    event.target.value === ''
+                      ? null
+                      : (event.target.value as ScrapeConfidence)
+                  setSlots((current) => current.map((slot) => ({ ...slot, confidence })))
+                  if (mode === 'edit' && venue.id) {
+                    setConfidenceSaving(true)
+                    void setVenueHappyHourConfidence({
+                      data: { venueId: venue.id, confidence },
+                    })
+                      .catch((saveError) => {
+                        setError(
+                          saveError instanceof Error
+                            ? saveError.message
+                            : 'Could not update confidence',
+                        )
+                      })
+                      .finally(() => setConfidenceSaving(false))
+                  }
+                }}
+                className={inputClassName}
+              >
+                {SCRAPE_CONFIDENCE_ADMIN_OPTIONS.map((option) => (
+                  <option key={option.value || 'unset'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Applies to all happy hour slots for this venue.
+              </p>
+            </label>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Add happy hour slots to set confidence per window.
+              Add happy hour slots to set confidence.
             </p>
           )}
 
           {mode === 'edit' && venue.id ? (
             <div className="space-y-3 border-t border-border/60 pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-h-9"
-                disabled={verifying}
-                onClick={() => {
-                  setVerifying(true)
-                  void verifyVenueByPerson({ data: { venueId: venue.id } })
-                    .then(() => {
-                      const verifiedAt = new Date().toISOString()
-                      updateVenue({ last_verified_at: verifiedAt })
-                      setSlots((current) =>
-                        current.map((slot) => ({ ...slot, confidence: 'high' })),
-                      )
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-dark">Community verified</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={isCommunityVerified ? 'default' : 'outline'}
+                  className="min-h-9"
+                  disabled={communitySaving}
+                  aria-pressed={isCommunityVerified}
+                  onClick={() => {
+                    const next = !isCommunityVerified
+                    setCommunitySaving(true)
+                    void setVenueCommunityVerified({
+                      data: { venueId: venue.id, enabled: next },
                     })
-                    .catch((verifyError) => {
-                      setError(
-                        verifyError instanceof Error
-                          ? verifyError.message
-                          : 'Verification failed',
-                      )
-                    })
-                    .finally(() => setVerifying(false))
-                }}
-              >
-                {verifying ? <Loader2 className="size-4 animate-spin" /> : null}
-                Verified by person
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="min-h-9"
-                disabled={communityVerifying}
-                onClick={() => {
-                  setCommunityVerifying(true)
-                  void verifyVenueByCommunity({ data: { venueId: venue.id } })
-                    .then(({ verifiedAt }) => {
-                      updateVenue({ community_verified_at: verifiedAt })
-                    })
-                    .catch((verifyError) => {
-                      setError(
-                        verifyError instanceof Error
-                          ? verifyError.message
-                          : 'Community verification failed',
-                      )
-                    })
-                    .finally(() => setCommunityVerifying(false))
-                }}
-              >
-                {communityVerifying ? <Loader2 className="size-4 animate-spin" /> : null}
-                Community verified
-              </Button>
+                      .then(({ communityVerifiedAt }) => {
+                        updateVenue({ community_verified_at: communityVerifiedAt ?? '' })
+                      })
+                      .catch((saveError) => {
+                        setError(
+                          saveError instanceof Error
+                            ? saveError.message
+                            : 'Could not update community verification',
+                        )
+                      })
+                      .finally(() => setCommunitySaving(false))
+                  }}
+                >
+                  {communitySaving ? <Loader2 className="size-4 animate-spin" /> : null}
+                  {isCommunityVerified ? 'Community verified' : 'Mark community verified'}
+                </Button>
+              </div>
 
               <div className="space-y-2">
                 <p className="text-xs font-medium text-dark">Happy hour changes</p>

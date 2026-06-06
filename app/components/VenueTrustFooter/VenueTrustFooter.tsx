@@ -17,6 +17,8 @@ export interface VenueTrustFooterProps {
   venueId?: string
   venueSlug?: string
   showInfoCorrection?: boolean
+  showSourceCount?: boolean
+  showConfidenceBadge?: boolean
 }
 
 export function VenueTrustFooter({
@@ -26,13 +28,16 @@ export function VenueTrustFooter({
   venueId,
   venueSlug,
   showInfoCorrection = true,
+  showSourceCount = true,
+  showConfidenceBadge = true,
 }: VenueTrustFooterProps) {
-  if (!shouldShowVenueTrustFooter(meta)) {
+  if (!shouldShowVenueTrustFooter(meta, { showSourceCount, showConfidenceBadge })) {
     return null
   }
 
   const unverified = isUnverifiedConfidence(meta.confidence)
   const canShowCorrection = showInfoCorrection && venueId && venueSlug
+  const showConfidence = showConfidenceBadge && (meta.confidence != null || unverified)
 
   return (
     <section className={cn('venue-trust-footer', className)} aria-label={ariaLabel}>
@@ -56,7 +61,7 @@ export function VenueTrustFooter({
         <VenueInfoCorrection venueId={venueId} venueSlug={venueSlug} />
       ) : null}
 
-      {meta.confidence != null || unverified ? (
+      {showConfidence ? (
         <span
           className={cn(
             'venue-trust-footer__badge inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase',
@@ -69,7 +74,7 @@ export function VenueTrustFooter({
         </span>
       ) : null}
 
-      {meta.sourceCount > 0 ? (
+      {showSourceCount && meta.sourceCount > 0 ? (
         <p className="venue-trust-footer__sources text-xs text-muted-foreground">
           {formatSourceCountLabel(meta.sourceCount)}
         </p>

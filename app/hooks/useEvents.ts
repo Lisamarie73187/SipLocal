@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSupabaseBrowserClient } from '@/lib/supabase'
 import type { EventDetail, EventVenueSummary } from '@/types/event'
@@ -76,8 +76,10 @@ export function useEvents(options: UseEventsOptions = {}): UseEventsResult {
   const [events, setEvents] = useState<EventDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const requestIdRef = useRef(0)
 
   const fetchEvents = useCallback(async (): Promise<void> => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     setError(null)
 
@@ -108,18 +110,30 @@ export function useEvents(options: UseEventsOptions = {}): UseEventsResult {
         throw fetchError
       }
 
+      if (requestId !== requestIdRef.current) {
+        return
+      }
+
       setEvents(normalizeEvents(data ?? [], city))
     } catch (fetchError) {
+      if (requestId !== requestIdRef.current) {
+        return
+      }
       logger.error('Failed to load events', { citySlug, error: fetchError })
       setError(fetchError instanceof Error ? fetchError : new Error('Failed to load events'))
       setEvents([])
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [citySlug])
 
   useEffect(() => {
     void fetchEvents()
+    return () => {
+      requestIdRef.current++
+    }
   }, [fetchEvents])
 
   useEffect(() => {

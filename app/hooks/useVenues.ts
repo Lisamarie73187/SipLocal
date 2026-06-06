@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getSupabaseBrowserClient } from '@/lib/supabase'
 import type { VenueDetail } from '@/types/venue'
@@ -56,8 +56,10 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesResult {
   const [venues, setVenues] = useState<VenueDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const requestIdRef = useRef(0)
 
   const fetchVenues = useCallback(async (): Promise<void> => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     setError(null)
 
@@ -88,6 +90,10 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesResult {
         throw fetchError
       }
 
+      if (requestId !== requestIdRef.current) {
+        return
+      }
+
       const cityMeta = { slug: city.slug, name: city.name, timezone: city.timezone }
       setVenues(
         normalizeVenues(
@@ -96,18 +102,26 @@ export function useVenues(options: UseVenuesOptions = {}): UseVenuesResult {
         ),
       )
     } catch (caught) {
+      if (requestId !== requestIdRef.current) {
+        return
+      }
       const nextError =
         caught instanceof Error ? caught : new Error('Failed to load venues')
       logger.error('useVenues fetch failed', nextError)
       setError(nextError)
       setVenues([])
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
   }, [citySlug])
 
   useEffect(() => {
     void fetchVenues()
+    return () => {
+      requestIdRef.current++
+    }
   }, [fetchVenues])
 
   return { venues, loading, error, refetch: fetchVenues }

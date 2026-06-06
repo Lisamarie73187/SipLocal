@@ -183,6 +183,38 @@ export const verifyVenueByPerson = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+export const setVenueCommunityVerified = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      venueId: z.string().uuid(),
+      enabled: z.boolean(),
+    }),
+  )
+  .handler(async ({
+    data,
+  }): Promise<{ communityVerifiedAt: string | null }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const communityVerifiedAt = data.enabled ? new Date().toISOString() : null
+
+    const { error: venueError } = await supabase
+      .from('venues')
+      .update({ community_verified_at: communityVerifiedAt })
+      .eq('id', data.venueId)
+
+    if (venueError) {
+      throw venueError
+    }
+
+    return { communityVerifiedAt }
+  })
+
+/** @deprecated Use setVenueCommunityVerified — kept for one-way approve flows */
 export const verifyVenueByCommunity = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ venueId: z.string().uuid() }))
   .handler(async ({ data }): Promise<{ verifiedAt: string }> => {
@@ -205,6 +237,35 @@ export const verifyVenueByCommunity = createServerFn({ method: 'POST' })
     }
 
     return { verifiedAt }
+  })
+
+export const setVenueHappyHourConfidence = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      venueId: z.string().uuid(),
+      confidence: z.enum(['high', 'medium', 'low']).nullable(),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { error: slotsError } = await supabase
+      .from('happy_hour_slots')
+      .update({ confidence: data.confidence })
+      .eq('venue_id', data.venueId)
+      .eq('is_active', true)
+
+    if (slotsError) {
+      throw slotsError
+    }
+
+    return { ok: true }
   })
 
 export const setVenueScheduleCadence = createServerFn({ method: 'POST' })

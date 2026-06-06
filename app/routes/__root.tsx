@@ -1,6 +1,12 @@
-import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
+import type { ReactNode } from 'react'
+import {
+  HeadContent,
+  Link,
+  Outlet,
+  Scripts,
+  createRootRoute,
+  type ErrorComponentProps,
+} from '@tanstack/react-router'
 
 import appCss from '../styles/globals.css?url'
 import { AppProviders } from '@/components/AppProviders/AppProviders'
@@ -30,43 +36,76 @@ export const Route = createRootRoute({
   }),
   component: RootLayout,
   notFoundComponent: RootNotFound,
+  errorComponent: RootError,
 })
 
-function RootNotFound() {
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="font-heading text-2xl font-semibold text-dark">Page not found</h1>
-      <p className="text-sm text-muted-foreground">
-        This link does not match a page in SipLocal.
-      </p>
-      <Link to="/" className="text-sm font-medium text-primary hover:underline">
-        Back to discovery
-      </Link>
-    </main>
-  )
-}
-
-function RootLayout() {
+function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
-        <AppProviders>
-          <Outlet />
-        </AppProviders>
-        <TanStackDevtools
-          config={{ position: 'bottom-right' }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-          ]}
-        />
+        {children}
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootLayout() {
+  return (
+    <RootDocument>
+      <AppProviders>
+        <Outlet />
+      </AppProviders>
+    </RootDocument>
+  )
+}
+
+function RootNotFound() {
+  return (
+    <RootDocument>
+      <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="font-heading text-2xl font-semibold text-dark">Page not found</h1>
+        <p className="text-sm text-muted-foreground">
+          This link does not match a page in SipLocal.
+        </p>
+        <Link to="/" className="text-sm font-medium text-primary hover:underline">
+          Back to discovery
+        </Link>
+      </main>
+    </RootDocument>
+  )
+}
+
+function RootError({ error }: ErrorComponentProps) {
+  const message =
+    error instanceof Error ? error.message : 'An unexpected error occurred.'
+
+  return (
+    <RootDocument>
+      <main className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="font-heading text-2xl font-semibold text-dark">
+          Something went wrong
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          We hit an unexpected error loading this page. Try again, or head back to discovery.
+        </p>
+        <p className="max-w-full truncate text-xs text-muted-foreground/70">{message}</p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Try again
+          </button>
+          <Link to="/" className="text-sm font-medium text-primary hover:underline">
+            Back to discovery
+          </Link>
+        </div>
+      </main>
+    </RootDocument>
   )
 }

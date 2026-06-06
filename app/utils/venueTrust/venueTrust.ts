@@ -157,11 +157,17 @@ export function isUnverifiedConfidence(confidence: ScrapeConfidence | null): boo
   return confidence !== 'high' && confidence !== 'medium'
 }
 
-export function shouldShowVenueTrustFooter(meta: VenueTrustMeta): boolean {
+export function shouldShowVenueTrustFooter(
+  meta: VenueTrustMeta,
+  options: { showSourceCount?: boolean; showConfidenceBadge?: boolean } = {},
+): boolean {
+  const showSourceCount = options.showSourceCount !== false
+  const showConfidenceBadge = options.showConfidenceBadge !== false
+
   return (
     meta.freshnessDate != null ||
-    meta.sourceCount > 0 ||
-    meta.confidence != null ||
+    (showSourceCount && meta.sourceCount > 0) ||
+    (showConfidenceBadge && meta.confidence != null) ||
     meta.isCommunityVerified
   )
 }

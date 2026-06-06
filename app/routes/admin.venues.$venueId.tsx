@@ -6,14 +6,22 @@ import { AdminLayout } from '@/components/AdminLayout/AdminLayout'
 import { AdminVenueEditor } from '@/components/AdminVenueEditor/AdminVenueEditor'
 import { getAdminVenueForEdit } from '@/server/adminVenues'
 import type { AdminVenueEditorData } from '@/server/adminVenues'
+import {
+  adminVenuesListSearchWithoutNotice,
+  buildAdminVenuesListSearch,
+  parseAdminVenuesListSearch,
+} from '@/utils/adminVenuesListSearch'
 
 export const Route = createFileRoute('/admin/venues/$venueId')({
   ssr: false,
+  validateSearch: parseAdminVenuesListSearch,
   component: AdminVenueEditPage,
 })
 
 function AdminVenueEditPage() {
   const { venueId } = Route.useParams()
+  const listSearch = Route.useSearch()
+  const returnListSearch = adminVenuesListSearchWithoutNotice(listSearch)
   const [data, setData] = useState<AdminVenueEditorData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,7 +43,11 @@ function AdminVenueEditPage() {
     <AdminLayout
       title={data?.venue?.name ?? 'Edit venue'}
       description="Update venue details, happy hours, and events."
-      backTo={{ to: '/admin/venues/', label: 'All venues' }}
+      backTo={{
+        to: '/admin/venues',
+        label: 'All venues',
+        search: buildAdminVenuesListSearch(returnListSearch),
+      }}
     >
       {error ? (
         <p className="text-sm text-destructive" role="alert">
@@ -56,6 +68,7 @@ function AdminVenueEditPage() {
           cityTimezone={data.cityTimezone}
           initialEvents={data.events}
           onEventsReload={loadVenue}
+          returnListSearch={returnListSearch}
         />
       ) : null}
     </AdminLayout>

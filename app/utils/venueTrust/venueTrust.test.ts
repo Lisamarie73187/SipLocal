@@ -237,6 +237,18 @@ describe('venue trust labels', () => {
         isCommunityVerified: true,
       }),
     ).toBe(true)
+    expect(
+      shouldShowVenueTrustFooter(
+        {
+          freshnessDate: null,
+          freshnessKind: null,
+          confidence: 'high',
+          sourceCount: 2,
+          isCommunityVerified: false,
+        },
+        { showSourceCount: false, showConfidenceBadge: false },
+      ),
+    ).toBe(false)
   })
 })
 

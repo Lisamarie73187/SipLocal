@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { Loader2, Pencil, Plus } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { Archive, Loader2, Pencil, Plus } from 'lucide-react'
 
 import { AdminArchiveVenues } from '@/components/AdminArchiveVenues/AdminArchiveVenues'
 import { AdminUnpublishVenues } from '@/components/AdminUnpublishVenues/AdminUnpublishVenues'
@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import { listAdminVenues, type AdminVenueListItem } from '@/server/adminVenues'
 import type { ScrapeConfidence } from '@/types/venue'
+import {
+  buildAdminVenuesListSearch,
+  type AdminVenueListTab,
+  type AdminVenuesListSearch,
+} from '@/utils/adminVenuesListSearch'
 import { venueStatusMismatch } from '@/utils/venueDataStatus'
 import { isUnverifiedConfidence } from '@/utils/venueTrust'
 import { cn } from '@/utils'
@@ -15,44 +20,30 @@ import { cn } from '@/utils'
 const inputClassName =
   'h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-sm text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20'
 
-type VenueArchiveTab = 'active' | 'archived'
+type VenueListTab = AdminVenueListTab
 
-type VenueDataStatusFilter = 'all' | 'pending_review' | 'live' | 'no_happy_hour'
-
-const VENUE_DATA_STATUS_FILTERS: Array<{ id: VenueDataStatusFilter; label: string }> = [
-  { id: 'all', label: 'All statuses' },
-  { id: 'pending_review', label: 'Needs review' },
+const VENUE_LIST_TABS: Array<{ id: VenueListTab; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'published', label: 'Published' },
+  { id: 'pending_review', label: 'Pending review' },
   { id: 'live', label: 'Live' },
-  { id: 'no_happy_hour', label: 'No happy hour found' },
 ]
 
-function archiveTabToFilters(tab: VenueArchiveTab): { archivedOnly: boolean } {
-  return { archivedOnly: tab === 'archived' }
-}
-
-function dataStatusFilterToApi(status: VenueDataStatusFilter): {
+function venueTabToApi(tab: VenueListTab): {
   liveOnly: boolean
   pendingReviewOnly: boolean
-  noHappyHourOnly: boolean
+  publishedOnly: boolean
 } {
   return {
-    liveOnly: status === 'live',
-    pendingReviewOnly: status === 'pending_review',
-    noHappyHourOnly: status === 'no_happy_hour',
+    liveOnly: tab === 'live',
+    pendingReviewOnly: tab === 'pending_review',
+    publishedOnly: tab === 'published',
   }
 }
 
-function dataStatusFilterLabel(status: VenueDataStatusFilter): string | null {
-  switch (status) {
-    case 'pending_review':
-      return 'needs review'
-    case 'live':
-      return 'live'
-    case 'no_happy_hour':
-      return 'no happy hour found'
-    default:
-      return null
-  }
+function venueTabLabel(tab: VenueListTab): string | null {
+  const match = VENUE_LIST_TABS.find((item) => item.id === tab)
+  return tab === 'all' ? null : (match?.label.toLowerCase() ?? null)
 }
 
 const primaryTabClassName = (selected: boolean): string =>
@@ -72,30 +63,85 @@ const filterChipClassName = (active: boolean): string =>
   )
 
 export interface AdminVenuesListProps {
-  initialCitySlug?: string
-  savedVenueId?: string
-  savedNotice?: string
+  listSearch: AdminVenuesListSearch
 }
 
-export function AdminVenuesList({
-  initialCitySlug,
-  savedVenueId,
-  savedNotice: savedNoticeFromUrl,
-}: AdminVenuesListProps) {
-  const [citySlug, setCitySlug] = useState(initialCitySlug ?? 'bend-or')
-  const [search, setSearch] = useState('')
-  const [archiveTab, setArchiveTab] = useState<VenueArchiveTab>('active')
-  const [dataStatusFilter, setDataStatusFilter] = useState<VenueDataStatusFilter>('all')
-  const [publishedFilter, setPublishedFilter] = useState(false)
-  const [hasEventsFilter, setHasEventsFilter] = useState(false)
-  const { archivedOnly } = archiveTabToFilters(archiveTab)
-  const { liveOnly, pendingReviewOnly, noHappyHourOnly } =
-    dataStatusFilterToApi(dataStatusFilter)
+function currentListSearchParams(
+  citySlug: string,
+  search: string,
+  listTab: VenueListTab,
+  hasEventsFilter: boolean,
+  showArchived: boolean,
+): AdminVenuesListSearch {
+  return {
+    city: citySlug.trim() || undefined,
+    tab: listTab === 'all' ? undefined : listTab,
+    q: search.trim() || undefined,
+    hasEvents: hasEventsFilter || undefined,
+    archived: showArchived || undefined,
+  }
+}
+
+export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
+  const navigate = useNavigate()
+  const [citySlug, setCitySlug] = useState(listSearch.city ?? 'bend-or')
+  const [search, setSearch] = useState(listSearch.q ?? '')
+  const [listTab, setListTab] = useState<VenueListTab>(listSearch.tab ?? 'all')
+  const [hasEventsFilter, setHasEventsFilter] = useState(listSearch.hasEvents ?? false)
+  const [showArchived, setShowArchived] = useState(listSearch.archived ?? false)
+  const { liveOnly, pendingReviewOnly, publishedOnly } = venueTabToApi(listTab)
   const [venues, setVenues] = useState<AdminVenueListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [savedNotice, setSavedNotice] = useState<string | null>(savedNoticeFromUrl ?? null)
+  const [savedNotice, setSavedNotice] = useState<string | null>(null)
   const [selectedVenueIds, setSelectedVenueIds] = useState<Set<string>>(new Set())
+
+  const commitListSearch = useCallback(
+    (patch: Partial<AdminVenuesListSearch>): void => {
+      void navigate({
+        to: '/admin/venues',
+        search: buildAdminVenuesListSearch({
+          ...currentListSearchParams(citySlug, search, listTab, hasEventsFilter, showArchived),
+          ...patch,
+        }),
+        replace: true,
+        resetScroll: false,
+      })
+    },
+    [navigate, citySlug, search, listTab, hasEventsFilter, showArchived],
+  )
+
+  const editLinkSearch = buildAdminVenuesListSearch(
+    currentListSearchParams(citySlug, search, listTab, hasEventsFilter, showArchived),
+  )
+
+  useEffect(() => {
+    setCitySlug(listSearch.city ?? 'bend-or')
+    setSearch(listSearch.q ?? '')
+    setListTab(listSearch.tab ?? 'all')
+    setHasEventsFilter(listSearch.hasEvents ?? false)
+    setShowArchived(listSearch.archived ?? false)
+  }, [listSearch.city, listSearch.q, listSearch.tab, listSearch.hasEvents, listSearch.archived])
+
+  useEffect(() => {
+    if (!listSearch.notice) {
+      return
+    }
+
+    setSavedNotice(listSearch.notice)
+    void navigate({
+      to: '/admin/venues',
+      search: buildAdminVenuesListSearch({
+        city: listSearch.city,
+        tab: listSearch.tab,
+        q: listSearch.q,
+        hasEvents: listSearch.hasEvents,
+        archived: listSearch.archived,
+      }),
+      replace: true,
+      resetScroll: false,
+    })
+  }, [listSearch.notice, listSearch.city, listSearch.tab, listSearch.q, listSearch.hasEvents, listSearch.archived, navigate])
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true)
@@ -105,11 +151,10 @@ export function AdminVenuesList({
         data: {
           citySlug: citySlug.trim() || undefined,
           search: search.trim() || undefined,
-          liveOnly,
-          pendingReviewOnly,
-          noHappyHourOnly,
-          publishedOnly: publishedFilter,
-          archivedOnly,
+          liveOnly: showArchived ? undefined : liveOnly,
+          pendingReviewOnly: showArchived ? undefined : pendingReviewOnly,
+          publishedOnly: showArchived ? undefined : publishedOnly,
+          archivedOnly: showArchived,
           withEventsOnly: hasEventsFilter,
         },
       })
@@ -132,14 +177,12 @@ export function AdminVenuesList({
   }, [
     citySlug,
     search,
-    archiveTab,
-    dataStatusFilter,
+    listTab,
     liveOnly,
     pendingReviewOnly,
-    noHappyHourOnly,
-    archivedOnly,
-    publishedFilter,
+    publishedOnly,
     hasEventsFilter,
+    showArchived,
   ])
 
   useEffect(() => {
@@ -147,24 +190,47 @@ export function AdminVenuesList({
   }, [load])
 
   const clearFilters = (): void => {
-    setArchiveTab('active')
-    setDataStatusFilter('all')
+    setListTab('all')
     setSearch('')
-    setPublishedFilter(false)
     setHasEventsFilter(false)
+    commitListSearch({ tab: undefined, q: undefined, hasEvents: false })
   }
 
+  useEffect(() => {
+    const q = search.trim() || undefined
+    if (q === listSearch.q) {
+      return
+    }
+
+    const handle = window.setTimeout(() => {
+      commitListSearch({ q })
+    }, 400)
+
+    return () => {
+      window.clearTimeout(handle)
+    }
+  }, [search, listSearch.q, commitListSearch])
+
+  useEffect(() => {
+    const city = citySlug.trim() || undefined
+    if (city === listSearch.city) {
+      return
+    }
+
+    const handle = window.setTimeout(() => {
+      commitListSearch({ city })
+    }, 400)
+
+    return () => {
+      window.clearTimeout(handle)
+    }
+  }, [citySlug, listSearch.city, commitListSearch])
+
   const filtersActive =
-    archiveTab !== 'active' ||
-    dataStatusFilter !== 'all' ||
-    publishedFilter ||
-    hasEventsFilter ||
-    search.trim().length > 0
+    listTab !== 'all' || hasEventsFilter || search.trim().length > 0
 
   const activeFilterLabels = [
-    archiveTab === 'archived' ? 'archived' : null,
-    dataStatusFilterLabel(dataStatusFilter),
-    publishedFilter ? 'published' : null,
+    showArchived ? 'archived' : venueTabLabel(listTab),
     hasEventsFilter ? 'has events' : null,
   ].filter((label): label is string => label !== null)
 
@@ -192,7 +258,7 @@ export function AdminVenuesList({
   }): void => {
     if (result.count === 0) {
       setSavedNotice(
-        archivedOnly
+        showArchived
           ? 'No venues were restored.'
           : 'No venues were archived (they may already be archived).',
       )
@@ -204,9 +270,9 @@ export function AdminVenuesList({
         ? `“${result.venueNames[0]}”`
         : `${result.count} venues`
     setSavedNotice(
-      archivedOnly
-        ? `Restored ${names} from the archive.`
-        : `Archived ${names}. They are hidden from default lists and unpublished.`,
+      showArchived
+        ? `Restored ${names} to active venues.`
+        : `Archived ${names}. They are hidden from this list and unpublished.`,
     )
     setSelectedVenueIds(new Set())
     void load()
@@ -229,45 +295,53 @@ export function AdminVenuesList({
     void load()
   }
 
-  useEffect(() => {
-    if (!savedVenueId) {
-      return
-    }
-    if (loading) {
-      return
-    }
-
-    const savedVenue = venues.find((venue) => venue.id === savedVenueId)
-    if (savedVenue) {
-      setSavedNotice(
-        savedNoticeFromUrl ?? `Saved “${savedVenue.name}”. It appears below.`,
-      )
-      document.getElementById(`venue-row-${savedVenueId}`)?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      })
-      return
-    }
-
-    setSavedNotice(
-      filtersActive
-        ? 'Venue saved, but filters are hiding it. Click “Show all venues”, then Refresh.'
-        : 'Venue saved. If it still does not appear, confirm the city slug matches the venue’s city and click Refresh.',
-    )
-  }, [savedVenueId, venues, loading, filtersActive])
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Link
           to="/admin/venues/new"
-          search={{ city: citySlug }}
+          search={editLinkSearch}
           className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
           <Plus className="size-4" />
           Add venue
         </Link>
+        {showArchived ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 gap-2"
+            onClick={() => {
+              setShowArchived(false)
+              setSelectedVenueIds(new Set())
+              commitListSearch({ archived: false })
+            }}
+          >
+            Back to active venues
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 gap-2"
+            onClick={() => {
+              setShowArchived(true)
+              setSelectedVenueIds(new Set())
+              commitListSearch({ archived: true })
+            }}
+          >
+            <Archive className="size-4" aria-hidden />
+            View archived
+          </Button>
+        )}
       </div>
+
+      {showArchived ? (
+        <p className="rounded-xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          Archived venues are hidden from the map and the active list. Restore them to edit or
+          publish again.
+        </p>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-2">
@@ -292,91 +366,80 @@ export function AdminVenuesList({
 
       <VenueFilterLegend />
 
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Archive
-        </p>
-        <div
-          className="grid w-full grid-cols-2 gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm"
-          role="tablist"
-          aria-label="Filter by archive"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={archiveTab === 'active'}
-            onClick={() => setArchiveTab('active')}
-            className={primaryTabClassName(archiveTab === 'active')}
+      {!showArchived ? (
+        <div className="space-y-3">
+          <div
+            className="grid w-full grid-cols-4 gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm"
+            role="tablist"
+            aria-label="Filter venues"
           >
-            Active
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={archiveTab === 'archived'}
-            onClick={() => setArchiveTab('archived')}
-            className={primaryTabClassName(archiveTab === 'archived')}
-          >
-            Archived
-          </button>
-        </div>
-      </div>
+            {VENUE_LIST_TABS.map((tab) => {
+              const selected = listTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => {
+                    setListTab(tab.id)
+                    commitListSearch({ tab: tab.id === 'all' ? undefined : tab.id })
+                  }}
+                  className={cn(
+                    primaryTabClassName(selected),
+                    'min-w-0 whitespace-nowrap px-1 text-xs sm:px-2 sm:text-sm',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
 
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Data status
-        </p>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="Filter by data status"
-        >
-          {VENUE_DATA_STATUS_FILTERS.map((option) => {
-            const selected = dataStatusFilter === option.id
-            return (
-              <button
-                key={option.id}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => setDataStatusFilter(option.id)}
-                className={filterChipClassName(selected)}
-              >
-                {option.label}
-              </button>
-            )
-          })}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setHasEventsFilter((current) => {
+                  const next = !current
+                  commitListSearch({ hasEvents: next || undefined })
+                  return next
+                })
+              }}
+              aria-pressed={hasEventsFilter}
+              className={filterChipClassName(hasEventsFilter)}
+            >
+              Has events
+            </button>
+            {hasEventsFilter ? (
+              <p className="text-xs text-muted-foreground">
+                Showing venues with at least one event in the{' '}
+                <span className="font-medium text-dark">
+                  {VENUE_LIST_TABS.find((tab) => tab.id === listTab)?.label ?? 'All'}
+                </span>{' '}
+                tab.
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          More filters
-        </p>
-        <div className="flex flex-wrap gap-2">
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => setPublishedFilter((current) => !current)}
-            aria-pressed={publishedFilter}
-            className={filterChipClassName(publishedFilter)}
-          >
-            Published
-          </button>
-          <button
-            type="button"
-            onClick={() => setHasEventsFilter((current) => !current)}
+            onClick={() => {
+              setHasEventsFilter((current) => {
+                const next = !current
+                commitListSearch({ hasEvents: next || undefined })
+                return next
+              })
+            }}
             aria-pressed={hasEventsFilter}
             className={filterChipClassName(hasEventsFilter)}
           >
             Has events
           </button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Filters stack — e.g. <span className="font-medium text-dark">Active</span> +{' '}
-          <span className="font-medium text-dark">Live</span> +{' '}
-          <span className="font-medium text-dark">Published</span> +{' '}
-          <span className="font-medium text-dark">Has events</span>.
-        </p>
-      </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="outline" onClick={() => void load()} disabled={loading}>
@@ -413,7 +476,7 @@ export function AdminVenuesList({
             Select all ({venues.length})
           </label>
           <div className="flex flex-wrap gap-3">
-            {archivedOnly ? (
+            {showArchived ? (
               <AdminArchiveVenues
                 venueIds={selectedVenueIdList}
                 mode="unarchive"
@@ -438,7 +501,9 @@ export function AdminVenuesList({
           </div>
           {selectedVenueIdList.length === 0 ? (
             <p className="text-xs text-muted-foreground">
-              Check one or more venues above, then archive or unpublish published venues.
+              {showArchived
+                ? 'Check one or more archived venues above, then restore them.'
+                : 'Check one or more venues above, then archive or unpublish published venues.'}
             </p>
           ) : null}
         </div>
@@ -473,8 +538,8 @@ export function AdminVenuesList({
           <p>No venues match these filters.</p>
           {filtersActive ? (
             <p>
-              Your edit may be saved as <span className="font-medium text-dark">needs review</span>{' '}
-              — try the <span className="font-medium text-dark">Needs review</span> filter, or click{' '}
+              Your edit may be saved as <span className="font-medium text-dark">pending review</span>
+              — try the <span className="font-medium text-dark">Pending review</span> tab, or click{' '}
               <button
                 type="button"
                 onClick={clearFilters}
@@ -494,11 +559,7 @@ export function AdminVenuesList({
       ) : (
         <ul className="space-y-2">
           {venues.map((venue) => (
-            <li
-              key={venue.id}
-              id={venue.id === savedVenueId ? `venue-row-${venue.id}` : undefined}
-              className={cn(venue.id === savedVenueId && 'rounded-xl ring-2 ring-primary/40')}
-            >
+            <li key={venue.id}>
               <div className="rounded-xl border border-border/70 bg-card px-4 py-3 text-sm shadow-sm">
                 <div className="flex items-start gap-3">
                   <input
@@ -513,6 +574,7 @@ export function AdminVenuesList({
                       <Link
                         to="/admin/venues/$venueId"
                         params={{ venueId: venue.id }}
+                        search={editLinkSearch}
                         className="font-medium text-dark hover:text-primary hover:underline"
                       >
                         {venue.name}
@@ -527,7 +589,7 @@ export function AdminVenuesList({
                           confidence={venue.confidence}
                           hasSlots={venue.happy_hour_slot_count > 0}
                         />
-                        {archivedOnly ? (
+                        {showArchived ? (
                           <AdminArchiveVenues
                             venueIds={[venue.id]}
                             mode="unarchive"
@@ -552,7 +614,11 @@ export function AdminVenuesList({
                           </>
                         )}
                         <Button variant="outline" size="sm" className="min-h-9 gap-1.5" asChild>
-                          <Link to="/admin/venues/$venueId" params={{ venueId: venue.id }}>
+                          <Link
+                            to="/admin/venues/$venueId"
+                            params={{ venueId: venue.id }}
+                            search={editLinkSearch}
+                          >
                             <Pencil className="size-3.5" aria-hidden />
                             Edit
                           </Link>
@@ -609,15 +675,19 @@ export function AdminVenuesList({
 function VenueFilterLegend() {
   return (
     <div className="rounded-xl border border-border/70 bg-card px-4 py-3 text-xs leading-relaxed text-muted-foreground shadow-sm">
-      <p className="font-semibold text-dark">Live vs Published</p>
+      <p className="font-semibold text-dark">Tabs</p>
       <ul className="mt-2 list-disc space-y-1.5 pl-4">
         <li>
-          <span className="font-medium text-dark">Live</span> is <em>data status</em> — you reviewed
-          and approved the venue info in the editor.
+          <span className="font-medium text-dark">Published</span> — on the discovery map (
+          <em>Published on discovery map</em> is on).
         </li>
         <li>
-          <span className="font-medium text-dark">Published</span> is the{' '}
-          <em>Published on discovery map</em> switch (requires Live status).
+          <span className="font-medium text-dark">Live</span> — data status is Live but not
+          published yet (ready to turn on the map switch).
+        </li>
+        <li>
+          <span className="font-medium text-dark">Pending review</span> — data still needs admin
+          review in the editor.
         </li>
       </ul>
     </div>

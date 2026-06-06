@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Map', icon: Map },
   { to: '/admin', label: 'Discover' },
   { to: '/admin/venues', label: 'Venues' },
+  { to: '/admin/review', label: 'Needs review' },
   { to: '/admin/claims', label: 'Claims' },
 ] as const
 
@@ -20,6 +21,9 @@ function isNavActive(pathname: string, to: string): boolean {
   }
   if (to === '/admin/venues') {
     return pathname.startsWith('/admin/venues')
+  }
+  if (to === '/admin/review') {
+    return pathname.startsWith('/admin/review')
   }
   if (to === '/admin/claims') {
     return pathname.startsWith('/admin/claims')
@@ -36,7 +40,7 @@ export function AdminTopNav() {
       className="flex flex-wrap items-center justify-between gap-3"
       aria-label="Admin navigation"
     >
-      <div className="flex min-h-11 flex-1 items-center gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
+      <div className="grid min-h-11 w-full min-w-0 flex-1 grid-cols-5 gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm">
         {NAV_ITEMS.map((item) => {
           const active = isNavActive(pathname, item.to)
           const Icon = 'icon' in item ? item.icon : null
@@ -46,7 +50,7 @@ export function AdminTopNav() {
               key={item.to}
               to={item.to}
               className={cn(
-                'inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold transition-colors',
+                'inline-flex min-h-9 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-1 text-xs font-semibold transition-colors sm:gap-1.5 sm:px-2 sm:text-sm',
                 active
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-accent hover:text-dark',

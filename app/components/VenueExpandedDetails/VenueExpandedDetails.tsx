@@ -67,6 +67,8 @@ export function VenueExpandedDetails({
           venueId={venue.id}
           venueSlug={venue.slug}
           showInfoCorrection={showInfoCorrection}
+          showSourceCount={false}
+          showConfidenceBadge={false}
         />
       ) : null}
 

@@ -37,6 +37,8 @@ export interface SlotFormState extends Omit<AdminVenueEditorSlot, 'day_of_week'>
   days: DayOfWeek[]
 }
 
+import type { AdminVenuesListSearch } from '@/utils/adminVenuesListSearch'
+
 export interface AdminVenueEditorProps {
   mode: 'create' | 'edit'
   initialCities: AdminVenueEditorData['cities']
@@ -45,4 +47,5 @@ export interface AdminVenueEditorProps {
   cityTimezone?: string
   initialEvents?: AdminVenueEditorEvent[]
   onEventsReload?: () => Promise<void>
+  returnListSearch?: AdminVenuesListSearch
 }

@@ -12,6 +12,9 @@ export const Route = createFileRoute('/admin')({
         search: { redirect: location.pathname },
       })
     }
+    if (!result.isAdmin) {
+      throw redirect({ to: '/' })
+    }
   },
   component: AdminLayoutRoute,
 })

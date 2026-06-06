@@ -21,6 +21,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as VenuesSlugRouteImport } from './routes/venues.$slug'
 import { Route as ManageSlugRouteImport } from './routes/manage.$slug'
 import { Route as AdminVenuesRouteImport } from './routes/admin.venues'
+import { Route as AdminReviewRouteImport } from './routes/admin.review'
 import { Route as AdminClaimsRouteImport } from './routes/admin.claims'
 import { Route as AdminVenuesIndexRouteImport } from './routes/admin.venues.index'
 import { Route as AdminVenuesNewRouteImport } from './routes/admin.venues.new'
@@ -86,6 +87,11 @@ const AdminVenuesRoute = AdminVenuesRouteImport.update({
   path: '/venues',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminReviewRoute = AdminReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminClaimsRoute = AdminClaimsRouteImport.update({
   id: '/claims',
   path: '/claims',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
+  '/admin/review': typeof AdminReviewRoute
   '/admin/venues': typeof AdminVenuesRouteWithChildren
   '/manage/$slug': typeof ManageSlugRoute
   '/venues/$slug': typeof VenuesSlugRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
+  '/admin/review': typeof AdminReviewRoute
   '/manage/$slug': typeof ManageSlugRoute
   '/venues/$slug': typeof VenuesSlugRoute
   '/admin': typeof AdminIndexRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
+  '/admin/review': typeof AdminReviewRoute
   '/admin/venues': typeof AdminVenuesRouteWithChildren
   '/manage/$slug': typeof ManageSlugRoute
   '/venues/$slug': typeof VenuesSlugRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/welcome'
     | '/admin/claims'
+    | '/admin/review'
     | '/admin/venues'
     | '/manage/$slug'
     | '/venues/$slug'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/welcome'
     | '/admin/claims'
+    | '/admin/review'
     | '/manage/$slug'
     | '/venues/$slug'
     | '/admin'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/welcome'
     | '/admin/claims'
+    | '/admin/review'
     | '/admin/venues'
     | '/manage/$slug'
     | '/venues/$slug'
@@ -310,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVenuesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/review': {
+      id: '/admin/review'
+      path: '/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AdminReviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/claims': {
       id: '/admin/claims'
       path: '/claims'
@@ -359,12 +378,14 @@ const AdminVenuesRouteWithChildren = AdminVenuesRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminClaimsRoute: typeof AdminClaimsRoute
+  AdminReviewRoute: typeof AdminReviewRoute
   AdminVenuesRoute: typeof AdminVenuesRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminClaimsRoute: AdminClaimsRoute,
+  AdminReviewRoute: AdminReviewRoute,
   AdminVenuesRoute: AdminVenuesRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
 }

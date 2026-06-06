@@ -130,6 +130,8 @@ function VenueDetailPage() {
             meta={trustMeta}
             venueId={venue.id}
             venueSlug={venue.slug}
+            showSourceCount={false}
+            showConfidenceBadge={false}
           />
         </section>
       ) : null}

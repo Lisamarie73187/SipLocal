@@ -6,13 +6,14 @@ import { ArrowLeft, Loader2 } from 'lucide-react'
 import { AdminTopNav } from '@/components/AdminTopNav/AdminTopNav'
 import { useAuth } from '@/hooks/useAuth'
 import { getCurrentUserAdmin } from '@/server/adminScrape'
+import type { AdminVenuesListSearch } from '@/utils/adminVenuesListSearch'
 import { cn } from '@/utils'
 
 export interface AdminLayoutProps {
   title: string
   description?: string
   children: ReactNode
-  backTo?: { to: string; label: string }
+  backTo?: { to: string; label: string; search?: AdminVenuesListSearch }
 }
 
 export function AdminLayout({ title, description, children, backTo }: AdminLayoutProps) {
@@ -80,6 +81,7 @@ export function AdminLayout({ title, description, children, backTo }: AdminLayou
         {backTo ? (
           <Link
             to={backTo.to}
+            search={backTo.search}
             className="mt-6 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-dark"
           >
             <ArrowLeft className="size-4" />

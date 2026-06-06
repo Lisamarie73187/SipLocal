@@ -6,17 +6,22 @@ import { AdminLayout } from '@/components/AdminLayout/AdminLayout'
 import { AdminVenueEditor } from '@/components/AdminVenueEditor/AdminVenueEditor'
 import { getAdminVenueCreateDefaults } from '@/server/adminVenues'
 import type { AdminVenueEditorData } from '@/server/adminVenues'
+import {
+  adminVenuesListSearchWithoutNotice,
+  buildAdminVenuesListSearch,
+  parseAdminVenuesListSearch,
+} from '@/utils/adminVenuesListSearch'
 
 export const Route = createFileRoute('/admin/venues/new')({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    city: typeof search.city === 'string' ? search.city : undefined,
-  }),
+  validateSearch: parseAdminVenuesListSearch,
   component: AdminVenueNewPage,
 })
 
 function AdminVenueNewPage() {
-  const { city } = Route.useSearch()
+  const listSearch = Route.useSearch()
+  const returnListSearch = adminVenuesListSearchWithoutNotice(listSearch)
+  const city = listSearch.city
   const [data, setData] = useState<AdminVenueEditorData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -32,7 +37,11 @@ function AdminVenueNewPage() {
     <AdminLayout
       title="Add venue"
       description="Create a new place manually. Set status to Live and Published when ready for the map."
-      backTo={{ to: '/admin/venues', label: 'All venues' }}
+      backTo={{
+        to: '/admin/venues',
+        label: 'All venues',
+        search: buildAdminVenuesListSearch(returnListSearch),
+      }}
     >
       {error ? (
         <p className="text-sm text-destructive" role="alert">
@@ -50,6 +59,7 @@ function AdminVenueNewPage() {
           initialCities={data.cities}
           initialVenue={data.venue}
           initialSlots={data.slots}
+          returnListSearch={returnListSearch}
         />
       ) : null}
     </AdminLayout>
