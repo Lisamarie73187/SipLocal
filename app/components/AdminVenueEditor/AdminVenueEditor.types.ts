@@ -26,8 +26,10 @@ export interface VenueFormState {
   place_id: string
   venue_type: Database['public']['Enums']['venue_type'] | ''
   last_verified_at: string
+  community_verified_at: string
   last_scraped_at: string
   schedule_cadence: Database['public']['Enums']['schedule_cadence'] | ''
+  image_url: string
 }
 
 export interface SlotFormState extends Omit<AdminVenueEditorSlot, 'day_of_week'> {

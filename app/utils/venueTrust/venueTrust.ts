@@ -7,13 +7,14 @@ const CONFIDENCE_RANK: Record<ScrapeConfidence, number> = {
   high: 2,
 }
 
-export type TrustFreshnessKind = 'verified' | 'updated'
+export type TrustFreshnessKind = 'verified' | 'updated' | 'community'
 
 export interface VenueTrustMeta {
   freshnessDate: Date | null
   freshnessKind: TrustFreshnessKind | null
   confidence: ScrapeConfidence | null
   sourceCount: number
+  isCommunityVerified: boolean
 }
 
 function parseTimestamp(value: string | null | undefined): Date | null {
@@ -72,10 +73,21 @@ function getRelevantSlots(
 function resolveFreshness(
   venue: VenueDetail,
   relevantSlots: HappyHourSlot[],
-): Pick<VenueTrustMeta, 'freshnessDate' | 'freshnessKind'> {
-  const verified = parseTimestamp(venue.last_verified_at)
-  if (verified) {
-    return { freshnessDate: verified, freshnessKind: 'verified' }
+): Pick<VenueTrustMeta, 'freshnessDate' | 'freshnessKind' | 'isCommunityVerified'> {
+  const isCommunityVerified = parseTimestamp(venue.community_verified_at) != null
+
+  const staffVerified = parseTimestamp(venue.last_verified_at)
+  if (staffVerified) {
+    return { freshnessDate: staffVerified, freshnessKind: 'verified', isCommunityVerified }
+  }
+
+  const communityVerified = parseTimestamp(venue.community_verified_at)
+  if (communityVerified) {
+    return {
+      freshnessDate: communityVerified,
+      freshnessKind: 'community',
+      isCommunityVerified: true,
+    }
   }
 
   const scraped = maxDate([
@@ -84,8 +96,8 @@ function resolveFreshness(
   ])
 
   return scraped
-    ? { freshnessDate: scraped, freshnessKind: 'updated' }
-    : { freshnessDate: null, freshnessKind: null }
+    ? { freshnessDate: scraped, freshnessKind: 'updated', isCommunityVerified: false }
+    : { freshnessDate: null, freshnessKind: null, isCommunityVerified: false }
 }
 
 function countSourceUrls(
@@ -113,7 +125,13 @@ export function formatTrustFreshnessLabel(
   date: Date,
 ): string {
   const formatted = formatTrustDate(date)
-  return kind === 'verified' ? `Last verified ${formatted}` : `Last updated ${formatted}`
+  if (kind === 'verified') {
+    return `Last verified ${formatted}`
+  }
+  if (kind === 'community') {
+    return `Community verified ${formatted}`
+  }
+  return `Last updated ${formatted}`
 }
 
 /** @deprecated Use formatTrustFreshnessLabel */
@@ -141,7 +159,10 @@ export function isUnverifiedConfidence(confidence: ScrapeConfidence | null): boo
 
 export function shouldShowVenueTrustFooter(meta: VenueTrustMeta): boolean {
   return (
-    meta.freshnessDate != null || meta.sourceCount > 0 || meta.confidence != null
+    meta.freshnessDate != null ||
+    meta.sourceCount > 0 ||
+    meta.confidence != null ||
+    meta.isCommunityVerified
   )
 }
 
@@ -181,6 +202,7 @@ export interface EventTrustSource {
   venue: {
     website_url: string | null
     last_verified_at: string | null
+    community_verified_at: string | null
     last_scraped_at: string | null
   }
 }
@@ -199,20 +221,30 @@ function countEventSourceUrls(
 
 function resolveEventFreshness(
   event: EventTrustSource,
-): Pick<VenueTrustMeta, 'freshnessDate' | 'freshnessKind'> {
-  const verified =
-    parseTimestamp(event.last_verified_at) ??
-    parseTimestamp(event.venue.last_verified_at)
-  if (verified) {
-    return { freshnessDate: verified, freshnessKind: 'verified' }
+): Pick<VenueTrustMeta, 'freshnessDate' | 'freshnessKind' | 'isCommunityVerified'> {
+  const isCommunityVerified = parseTimestamp(event.venue.community_verified_at) != null
+
+  const staffVerified =
+    parseTimestamp(event.last_verified_at) ?? parseTimestamp(event.venue.last_verified_at)
+  if (staffVerified) {
+    return { freshnessDate: staffVerified, freshnessKind: 'verified', isCommunityVerified }
+  }
+
+  const communityVerified = parseTimestamp(event.venue.community_verified_at)
+  if (communityVerified) {
+    return {
+      freshnessDate: communityVerified,
+      freshnessKind: 'community',
+      isCommunityVerified: true,
+    }
   }
 
   const scraped =
     parseTimestamp(event.last_scraped_at) ?? parseTimestamp(event.venue.last_scraped_at)
 
   return scraped
-    ? { freshnessDate: scraped, freshnessKind: 'updated' }
-    : { freshnessDate: null, freshnessKind: null }
+    ? { freshnessDate: scraped, freshnessKind: 'updated', isCommunityVerified: false }
+    : { freshnessDate: null, freshnessKind: null, isCommunityVerified: false }
 }
 
 function resolveEventConfidence(event: EventTrustSource): ScrapeConfidence | null {

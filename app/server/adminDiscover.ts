@@ -183,6 +183,30 @@ export const verifyVenueByPerson = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
+export const verifyVenueByCommunity = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ venueId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ verifiedAt: string }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const verifiedAt = new Date().toISOString()
+
+    const { error: venueError } = await supabase
+      .from('venues')
+      .update({ community_verified_at: verifiedAt })
+      .eq('id', data.venueId)
+
+    if (venueError) {
+      throw venueError
+    }
+
+    return { verifiedAt }
+  })
+
 export const setVenueScheduleCadence = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({

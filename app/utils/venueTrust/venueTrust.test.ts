@@ -57,6 +57,7 @@ const venue = (overrides: Partial<VenueDetail> = {}): VenueDetail => ({
   yelp_review_count: null,
   last_scraped_at: '2026-03-01T12:00:00.000Z',
   last_verified_at: null,
+  community_verified_at: null,
   scraped_city: null,
   scraped_zip: null,
   scrape_content_hash: null,
@@ -107,6 +108,30 @@ describe('getVenueTrustMeta', () => {
 
     expect(meta.freshnessDate?.toISOString()).toBe('2026-03-08T12:00:00.000Z')
     expect(meta.freshnessKind).toBe('updated')
+  })
+
+  it('uses community_verified_at when staff verification is missing', () => {
+    const meta = getVenueTrustMeta(
+      venue({
+        community_verified_at: '2026-03-09T00:00:00.000Z',
+      }),
+    )
+
+    expect(meta.freshnessDate?.toISOString()).toBe('2026-03-09T00:00:00.000Z')
+    expect(meta.freshnessKind).toBe('community')
+    expect(meta.isCommunityVerified).toBe(true)
+  })
+
+  it('flags community verification alongside staff verification', () => {
+    const meta = getVenueTrustMeta(
+      venue({
+        last_verified_at: '2026-03-10T00:00:00.000Z',
+        community_verified_at: '2026-03-09T00:00:00.000Z',
+      }),
+    )
+
+    expect(meta.freshnessKind).toBe('verified')
+    expect(meta.isCommunityVerified).toBe(true)
   })
 
   it('rolls up to the lowest confidence across live slots', () => {
@@ -200,8 +225,18 @@ describe('venue trust labels', () => {
         freshnessKind: null,
         confidence: null,
         sourceCount: 0,
+        isCommunityVerified: false,
       }),
     ).toBe(false)
+    expect(
+      shouldShowVenueTrustFooter({
+        freshnessDate: null,
+        freshnessKind: null,
+        confidence: null,
+        sourceCount: 0,
+        isCommunityVerified: true,
+      }),
+    ).toBe(true)
   })
 })
 
@@ -209,6 +244,7 @@ describe('getEventTrustMeta', () => {
   const venueTrust = {
     website_url: 'https://example.com',
     last_verified_at: null as string | null,
+    community_verified_at: null as string | null,
     last_scraped_at: null as string | null,
   }
 
@@ -236,6 +272,7 @@ describe('getEventTrustMeta', () => {
       venue: {
         website_url: 'https://example.com',
         last_verified_at: '2026-03-08T00:00:00.000Z',
+        community_verified_at: null,
         last_scraped_at: null,
       },
     })

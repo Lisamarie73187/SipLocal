@@ -2,12 +2,15 @@ import type { EventTimelineSection } from '@/hooks/useEventTimeline'
 import type { TimelineSection } from '@/hooks/useHappyHourTimeline'
 import type { DiscoveryContentType, UseDiscoveryFiltersResult } from '@/hooks/useDiscoveryFilters'
 
+import { TimelineEmptyVenueSuggest } from '@/components/TimelineEmptyVenueSuggest/TimelineEmptyVenueSuggest'
+
 import { EventTimelineList } from './EventTimelineList'
 import { TimelineSectionBlock } from './TimelineSectionBlock'
 import { TimelineSkeleton } from './TimelineSkeleton'
 
 export interface TimelinePanelProps {
   contentType: DiscoveryContentType
+  citySlug: string
   venueSections: TimelineSection[]
   eventSections: EventTimelineSection[]
   isLiveDay: boolean
@@ -33,6 +36,7 @@ function emptyMessage(contentType: DiscoveryContentType): string {
 
 export function TimelinePanel({
   contentType,
+  citySlug,
   venueSections,
   eventSections,
   isLiveDay,
@@ -60,28 +64,36 @@ export function TimelinePanel({
         {loading ? (
           <TimelineSkeleton />
         ) : isEmpty ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
-            <p className="text-2xl" aria-hidden>
-              {contentType === 'events' ? '🎟️' : '🌅'}
-            </p>
-            <p className="font-heading mt-2 text-sm font-semibold text-dark">
-              {emptyMessage(contentType)}
-            </p>
-            {hasActiveFilters ? (
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                Try clearing some filters.
+          isEventsMode ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
+              <p className="text-2xl" aria-hidden>
+                🎟️
               </p>
-            ) : null}
-            {hasActiveFilters ? (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="btn-gradient mt-4 rounded-full px-4 py-1.5 text-xs font-medium"
-              >
-                Clear filters
-              </button>
-            ) : null}
-          </div>
+              <p className="font-heading mt-2 text-sm font-semibold text-dark">
+                {emptyMessage(contentType)}
+              </p>
+              {hasActiveFilters ? (
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Try clearing some filters.
+                </p>
+              ) : null}
+              {hasActiveFilters ? (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="btn-gradient mt-4 rounded-full px-4 py-1.5 text-xs font-medium"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <TimelineEmptyVenueSuggest
+              citySlug={citySlug}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={clearAllFilters}
+            />
+          )
         ) : isEventsMode ? (
           <EventTimelineList
             sections={eventSections}

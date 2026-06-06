@@ -7,9 +7,10 @@ import { HappyHourPastePanel } from '@/components/HappyHourPastePanel/HappyHourP
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import {
   setVenueScheduleCadence,
+  verifyVenueByCommunity,
   verifyVenueByPerson,
 } from '@/server/adminDiscover'
-import { saveAdminVenue } from '@/server/adminVenues'
+import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
 import type { AdminVenueEditorSlot } from '@/server/adminVenues'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
@@ -31,6 +32,8 @@ import { VENUE_TYPE_ADMIN_OPTIONS } from '@/utils/venueType'
 import { cn } from '@/utils'
 
 import { AdminVenueEventsSection } from './AdminVenueEventsSection'
+import { AdminVenueManagersSection } from '@/components/AdminVenueManagersSection/AdminVenueManagersSection'
+import { AdminMenuSubmissionsPanel } from '@/components/AdminMenuSubmissionsPanel/AdminMenuSubmissionsPanel'
 import type { AdminVenueEditorProps, SlotFormState, VenueFormState } from './AdminVenueEditor.types'
 
 const inputClassName =
@@ -53,6 +56,7 @@ function venueToFormState(
     place_id: venue.place_id ?? '',
     venue_type: venue.venue_type ?? '',
     last_verified_at: venue.last_verified_at ?? '',
+    community_verified_at: venue.community_verified_at ?? '',
     last_scraped_at: venue.last_scraped_at ?? '',
     schedule_cadence: venue.schedule_cadence ?? '',
   }
@@ -82,9 +86,16 @@ function newEmptySlot(): SlotFormState {
 }
 
 function formatEditorFreshness(venue: VenueFormState): string | null {
-  const verified = venue.last_verified_at ? new Date(venue.last_verified_at) : null
-  if (verified && !Number.isNaN(verified.getTime())) {
-    return formatTrustFreshnessLabel('verified', verified)
+  const staffVerified = venue.last_verified_at ? new Date(venue.last_verified_at) : null
+  if (staffVerified && !Number.isNaN(staffVerified.getTime())) {
+    return formatTrustFreshnessLabel('verified', staffVerified)
+  }
+
+  const communityVerified = venue.community_verified_at
+    ? new Date(venue.community_verified_at)
+    : null
+  if (communityVerified && !Number.isNaN(communityVerified.getTime())) {
+    return formatTrustFreshnessLabel('community', communityVerified)
   }
 
   const scraped = venue.last_scraped_at ? new Date(venue.last_scraped_at) : null
@@ -132,6 +143,7 @@ export function AdminVenueEditor({
   const [slots, setSlots] = useState<SlotFormState[]>(() => slotsToFormState(initialSlots))
   const [saving, setSaving] = useState(false)
   const [verifying, setVerifying] = useState(false)
+  const [communityVerifying, setCommunityVerifying] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [autoSlug, setAutoSlug] = useState(mode === 'create')
   const editorTrustConfidence = useMemo(() => rollupSlotConfidence(slots), [slots])
@@ -139,6 +151,15 @@ export function AdminVenueEditor({
     () => collectUniqueUrls(slots.flatMap((slot) => slot.source_urls)),
     [slots],
   )
+  const reloadSlotsFromServer = useCallback(async (): Promise<void> => {
+    if (!venue.id) {
+      return
+    }
+
+    const fresh = await getAdminVenueForEdit({ data: { venueId: venue.id } })
+    setSlots(slotsToFormState(fresh.slots))
+  }, [venue.id])
+
   const editorSourceCount = useMemo(() => {
     const website = venue.website_url?.trim()
     if (!website) {
@@ -600,6 +621,32 @@ export function AdminVenueEditor({
                 Verified by person
               </Button>
 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-9"
+                disabled={communityVerifying}
+                onClick={() => {
+                  setCommunityVerifying(true)
+                  void verifyVenueByCommunity({ data: { venueId: venue.id } })
+                    .then(({ verifiedAt }) => {
+                      updateVenue({ community_verified_at: verifiedAt })
+                    })
+                    .catch((verifyError) => {
+                      setError(
+                        verifyError instanceof Error
+                          ? verifyError.message
+                          : 'Community verification failed',
+                      )
+                    })
+                    .finally(() => setCommunityVerifying(false))
+                }}
+              >
+                {communityVerifying ? <Loader2 className="size-4 animate-spin" /> : null}
+                Community verified
+              </Button>
+
               <div className="space-y-2">
                 <p className="text-xs font-medium text-dark">Happy hour changes</p>
                 <div className="flex flex-wrap gap-2">
@@ -685,8 +732,14 @@ export function AdminVenueEditor({
             setError(null)
           }}
         />
+
+        {mode === 'edit' && venue.id ? (
+          <AdminMenuSubmissionsPanel venueId={venue.id} onApproved={reloadSlotsFromServer} />
+        ) : null}
+
         <p className="text-xs text-muted-foreground">
-          Paste updates the slots below. Click Save venue at the bottom to persist changes.
+          Paste updates the slots below. Approving a menu photo adds specials to existing slots
+          immediately. Click Save venue at the bottom to persist other edits.
         </p>
 
         {slots.length === 0 ? (
@@ -1059,6 +1112,10 @@ export function AdminVenueEditor({
           </ul>
         )}
       </section>
+
+      {mode === 'edit' && venue.id ? (
+        <AdminVenueManagersSection venueId={venue.id} venueSlug={venue.slug} />
+      ) : null}
 
       {mode === 'edit' && venue.id ? (
         <AdminVenueEventsSection

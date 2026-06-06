@@ -12,6 +12,7 @@ export interface VenueTimelineCardProps {
   selected?: boolean
   hovered?: boolean
   isLiveDay: boolean
+  preview?: boolean
   onSelect: () => void
   onHover: () => void
   onHoverEnd: () => void
@@ -22,6 +23,7 @@ export function VenueTimelineCard({
   selected,
   hovered,
   isLiveDay,
+  preview = false,
   onSelect,
   onHover,
   onHoverEnd,
@@ -32,25 +34,17 @@ export function VenueTimelineCard({
     !isOpenNow && badgeLabel && (!isStartsInBadgeLabel(badgeLabel) || isLiveDay)
   const subtitle = getVenueDisplaySubtitle(venue)
 
-  return (
-    <button
-      type="button"
-      data-venue-id={venue.id}
-      onClick={onSelect}
-      onMouseEnter={onHover}
-      onMouseLeave={onHoverEnd}
-      onFocus={onHover}
-      onBlur={onHoverEnd}
-      aria-pressed={selected}
-      className={cn(
-        'venue-timeline-card w-full rounded-2xl border border-primary/35 bg-card p-4 text-left transition-all duration-200',
-        'hover:border-primary/50 hover:shadow-md',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-        selected && 'border-primary ring-2 ring-primary/20 shadow-md',
-        hovered && !selected && 'border-primary/45 shadow-sm',
-        emphasis && !selected && !hovered && 'border-primary/40',
-      )}
-    >
+  const className = cn(
+    'venue-timeline-card w-full rounded-2xl border border-primary/35 bg-card p-4 text-left transition-all duration-200',
+    !preview && 'hover:border-primary/50 hover:shadow-md',
+    !preview && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+    selected && 'border-primary ring-2 ring-primary/20 shadow-md',
+    hovered && !selected && 'border-primary/45 shadow-sm',
+    emphasis && !selected && !hovered && 'border-primary/40',
+  )
+
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
@@ -59,7 +53,7 @@ export function VenueTimelineCard({
             </p>
             <VenuePriceLevel level={venue.price_level} className="text-sm" />
           </div>
-          <p className="mt-0.5 text-sm leading-snug text-muted-foreground line-clamp-2">
+          <p className="mt-0.5 line-clamp-2 text-sm leading-snug text-muted-foreground">
             {subtitle}
           </p>
         </div>
@@ -92,6 +86,26 @@ export function VenueTimelineCard({
           <span className="break-words">{venue.address_line1}</span>
         </span>
       </div>
+    </>
+  )
+
+  if (preview) {
+    return <div className={className}>{content}</div>
+  }
+
+  return (
+    <button
+      type="button"
+      data-venue-id={venue.id}
+      onClick={onSelect}
+      onMouseEnter={onHover}
+      onMouseLeave={onHoverEnd}
+      onFocus={onHover}
+      onBlur={onHoverEnd}
+      aria-pressed={selected}
+      className={className}
+    >
+      {content}
     </button>
   )
 }

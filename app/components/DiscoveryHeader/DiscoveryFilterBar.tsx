@@ -67,7 +67,6 @@ export function DiscoveryFilterBar({
   const showHappyHourFilters = applied.contentType === 'happy_hours'
   const happeningNowActive = applied.statusFilters.includes('happening_now')
   const startingSoonActive = applied.statusFilters.includes('starting_soon')
-  const dayTimeDisabled = happeningNowActive
 
   const dayLabel = getViewDayButtonLabel(applied.viewDay)
   const timeLabel = getTimeFilterButtonLabel(applied.timeAtMinutes)
@@ -192,13 +191,9 @@ export function DiscoveryFilterBar({
               label={dayLabel}
               icon={Calendar}
               active={dayActive}
-              disabled={dayTimeDisabled}
               aria-expanded={dayPopoverOpen}
               aria-haspopup="dialog"
               onClick={() => {
-                if (dayTimeDisabled) {
-                  return
-                }
                 setTimePopoverOpen(false)
                 setDayPopoverOpen((open) => !open)
               }}
@@ -242,15 +237,9 @@ export function DiscoveryFilterBar({
               label={timeLabel}
               icon={Clock}
               active={timeActive}
-              disabled={dayTimeDisabled}
               aria-expanded={timePopoverOpen}
               aria-haspopup="dialog"
-              onClick={() => {
-                if (dayTimeDisabled) {
-                  return
-                }
-                toggleTimePopover()
-              }}
+              onClick={() => toggleTimePopover()}
             />
             <FilterPopoverPanel
               open={timePopoverOpen}

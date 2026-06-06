@@ -286,29 +286,56 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
+          gender: Database["public"]["Enums"]["profile_gender"] | null
           id: string
           is_admin: boolean
+          neighborhood_or_zip: string | null
+          notify_favorite_updates: boolean
+          notify_new_venues_in_city: boolean
+          notify_starting_soon: boolean
           preferred_city_id: string | null
           updated_at: string
+          visitor_type:
+            | Database["public"]["Enums"]["profile_visitor_type"]
+            | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          gender?: Database["public"]["Enums"]["profile_gender"] | null
           id: string
           is_admin?: boolean
+          neighborhood_or_zip?: string | null
+          notify_favorite_updates?: boolean
+          notify_new_venues_in_city?: boolean
+          notify_starting_soon?: boolean
           preferred_city_id?: string | null
           updated_at?: string
+          visitor_type?:
+            | Database["public"]["Enums"]["profile_visitor_type"]
+            | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
+          gender?: Database["public"]["Enums"]["profile_gender"] | null
           id?: string
           is_admin?: boolean
+          neighborhood_or_zip?: string | null
+          notify_favorite_updates?: boolean
+          notify_new_venues_in_city?: boolean
+          notify_starting_soon?: boolean
           preferred_city_id?: string | null
           updated_at?: string
+          visitor_type?:
+            | Database["public"]["Enums"]["profile_visitor_type"]
+            | null
         }
         Relationships: [
           {
@@ -463,16 +490,209 @@ export type Database = {
           },
         ]
       }
+      venue_claim_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["venue_claim_status"]
+          updated_at: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["venue_claim_status"]
+          updated_at?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["venue_claim_status"]
+          updated_at?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_claim_requests_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_managers: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["venue_manager_role"]
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["venue_manager_role"]
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["venue_manager_role"]
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_managers_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_menu_submissions: {
+        Row: {
+          created_at: string
+          id: string
+          parsed_slots: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source: Database["public"]["Enums"]["menu_submission_source"]
+          status: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path: string
+          submitter_lat: number | null
+          submitter_lng: number | null
+          updated_at: string
+          user_id: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parsed_slots?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source: Database["public"]["Enums"]["menu_submission_source"]
+          status?: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path: string
+          submitter_lat?: number | null
+          submitter_lng?: number | null
+          updated_at?: string
+          user_id: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parsed_slots?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source?: Database["public"]["Enums"]["menu_submission_source"]
+          status?: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path?: string
+          submitter_lat?: number | null
+          submitter_lng?: number | null
+          updated_at?: string
+          user_id?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_menu_submissions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      venue_suggestions: {
+        Row: {
+          city_id: string
+          created_at: string
+          id: string
+          parsed_slots: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path: string
+          submitter_lat: number | null
+          submitter_lng: number | null
+          updated_at: string
+          user_id: string
+          venue_name: string
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          id?: string
+          parsed_slots?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path: string
+          submitter_lat?: number | null
+          submitter_lng?: number | null
+          updated_at?: string
+          user_id: string
+          venue_name: string
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          id?: string
+          parsed_slots?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["menu_submission_status"]
+          storage_path?: string
+          submitter_lat?: number | null
+          submitter_lng?: number | null
+          updated_at?: string
+          user_id?: string
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_suggestions_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address_line1: string
           address_line2: string | null
           archived_at: string | null
           city_id: string
+          community_verified_at: string | null
           created_at: string
           data_status: Database["public"]["Enums"]["venue_data_status"]
           description: string | null
           featured_until: string | null
+          happy_hour_menu_storage_path: string | null
           id: string
           image_url: string | null
           is_featured: boolean
@@ -505,10 +725,12 @@ export type Database = {
           address_line2?: string | null
           archived_at?: string | null
           city_id: string
+          community_verified_at?: string | null
           created_at?: string
           data_status?: Database["public"]["Enums"]["venue_data_status"]
           description?: string | null
           featured_until?: string | null
+          happy_hour_menu_storage_path?: string | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -541,10 +763,12 @@ export type Database = {
           address_line2?: string | null
           archived_at?: string | null
           city_id?: string
+          community_verified_at?: string | null
           created_at?: string
           data_status?: Database["public"]["Enums"]["venue_data_status"]
           description?: string | null
           featured_until?: string | null
+          happy_hour_menu_storage_path?: string | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -588,21 +812,29 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      is_venue_manager: { Args: { p_venue_id: string }; Returns: boolean }
+      is_venue_manager_for_any_managed_venue: { Args: never; Returns: boolean }
     }
     Enums: {
       deal_category: "drinks" | "food" | "both" | "other"
       event_type: "trivia" | "live_music" | "special" | "other"
       happy_hour_data_status: "live" | "pending_review" | "flagged"
+      menu_submission_source: "crowd" | "manager"
+      menu_submission_status: "pending_review" | "approved" | "rejected"
+      profile_gender: "woman" | "man" | "non_binary" | "prefer_not_to_say"
+      profile_visitor_type: "local" | "visiting"
       schedule_cadence: "weekly" | "monthly" | "annually" | "seasonally"
       scrape_confidence: "high" | "medium" | "low"
       scrape_job_status: "pending" | "running" | "complete" | "failed"
       scrape_revision_status: "pending_review" | "approved" | "rejected"
+      venue_claim_status: "pending" | "approved" | "rejected"
       venue_data_status:
         | "live"
         | "pending_review"
         | "no_happy_hour_found"
         | "flagged"
         | "discovered"
+      venue_manager_role: "owner" | "manager"
       venue_price_level: "$" | "$$" | "$$$"
       venue_type:
         | "bar"
@@ -748,10 +980,15 @@ export const Constants = {
       deal_category: ["drinks", "food", "both", "other"],
       event_type: ["trivia", "live_music", "special", "other"],
       happy_hour_data_status: ["live", "pending_review", "flagged"],
+      menu_submission_source: ["crowd", "manager"],
+      menu_submission_status: ["pending_review", "approved", "rejected"],
+      profile_gender: ["woman", "man", "non_binary", "prefer_not_to_say"],
+      profile_visitor_type: ["local", "visiting"],
       schedule_cadence: ["weekly", "monthly", "annually", "seasonally"],
       scrape_confidence: ["high", "medium", "low"],
       scrape_job_status: ["pending", "running", "complete", "failed"],
       scrape_revision_status: ["pending_review", "approved", "rejected"],
+      venue_claim_status: ["pending", "approved", "rejected"],
       venue_data_status: [
         "live",
         "pending_review",
@@ -759,6 +996,7 @@ export const Constants = {
         "flagged",
         "discovered",
       ],
+      venue_manager_role: ["owner", "manager"],
       venue_price_level: ["$", "$$", "$$$"],
       venue_type: [
         "bar",

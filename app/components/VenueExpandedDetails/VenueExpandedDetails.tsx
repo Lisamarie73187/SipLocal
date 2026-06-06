@@ -1,5 +1,6 @@
 import { Clock, ExternalLink } from 'lucide-react'
 
+import { VenueHappyHourMenuImage } from '@/components/VenueHappyHourMenuImage/VenueHappyHourMenuImage'
 import { VenueTrustFooter } from '@/components/VenueTrustFooter/VenueTrustFooter'
 import { Button } from '@/components/ui/button'
 import type { VenueDetail } from '@/types/venue'
@@ -12,10 +13,16 @@ import { cn } from '@/utils'
 export interface VenueExpandedDetailsProps {
   venue: VenueDetail
   trustMeta?: VenueTrustMeta
+  showInfoCorrection?: boolean
   className?: string
 }
 
-export function VenueExpandedDetails({ venue, trustMeta, className }: VenueExpandedDetailsProps) {
+export function VenueExpandedDetails({
+  venue,
+  trustMeta,
+  showInfoCorrection = true,
+  className,
+}: VenueExpandedDetailsProps) {
   const websiteUrl = venue.website_url?.trim() ? formatVenueWebsiteUrl(venue.website_url) : null
   const scheduleGroups = groupHappyHourSlotsForDisplay(venue.happy_hour_slots)
 
@@ -41,9 +48,9 @@ export function VenueExpandedDetails({ venue, trustMeta, className }: VenueExpan
                     })}
                   </span>
                 </p>
-                {group.deal_summary ? (
+                {group.deal_summary?.trim() ? (
                   <p className="mt-1 text-sm leading-snug text-muted-foreground">
-                    {group.deal_summary}
+                    {group.deal_summary.trim()}
                   </p>
                 ) : null}
               </li>
@@ -52,7 +59,16 @@ export function VenueExpandedDetails({ venue, trustMeta, className }: VenueExpan
         )}
       </section>
 
-      {trustMeta ? <VenueTrustFooter meta={trustMeta} /> : null}
+      <VenueHappyHourMenuImage venueId={venue.id} venueName={venue.name} />
+
+      {trustMeta ? (
+        <VenueTrustFooter
+          meta={trustMeta}
+          venueId={venue.id}
+          venueSlug={venue.slug}
+          showInfoCorrection={showInfoCorrection}
+        />
+      ) : null}
 
       {websiteUrl ? (
         <Button asChild variant="outline" className="h-10 w-full gap-2 text-sm" size="sm">

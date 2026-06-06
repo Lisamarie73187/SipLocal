@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Map', icon: Map },
   { to: '/admin', label: 'Discover' },
   { to: '/admin/venues', label: 'Venues' },
+  { to: '/admin/claims', label: 'Claims' },
 ] as const
 
 function isNavActive(pathname: string, to: string): boolean {
@@ -19,6 +20,9 @@ function isNavActive(pathname: string, to: string): boolean {
   }
   if (to === '/admin/venues') {
     return pathname.startsWith('/admin/venues')
+  }
+  if (to === '/admin/claims') {
+    return pathname.startsWith('/admin/claims')
   }
   return false
 }

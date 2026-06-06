@@ -15,6 +15,7 @@ export interface EventVenueSummary {
   venue_type: Database['public']['Enums']['venue_type'] | null
   website_url: string | null
   last_verified_at: string | null
+  community_verified_at: string | null
   last_scraped_at: string | null
 }
 

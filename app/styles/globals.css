@@ -1154,6 +1154,23 @@ h6 {
   }
 }
 
+/* Owner portal — static preview of the map place panel */
+.venue-map-place-panel--preview {
+  top: auto;
+  bottom: auto;
+  left: auto;
+  width: 100%;
+  max-width: none;
+  max-height: min(72dvh, 560px);
+  border-right: none;
+  animation: none;
+  box-shadow: none;
+}
+
+.owner-venue-preview-panel {
+  max-height: min(72dvh, 560px);
+}
+
 .venue-trust-footer {
   display: flex;
   flex-direction: column;
@@ -1174,6 +1191,12 @@ h6 {
   color: color-mix(in oklab, var(--color-aperol-orange) 78%, var(--color-deep-plum));
 }
 
+.venue-trust-footer__badge--community {
+  width: fit-content;
+  background: color-mix(in oklab, var(--color-soft-sunset-pink) 28%, transparent);
+  color: color-mix(in oklab, var(--color-dusty-mauve) 88%, var(--color-deep-plum));
+}
+
 .map-preview-enter {
   animation: map-preview-enter 0.22s ease-out;
 }
@@ -1191,6 +1214,10 @@ h6 {
 
 @media (prefers-reduced-motion: reduce) {
   .venue-map-place-panel {
+    animation: none;
+  }
+
+  .venue-map-place-panel--preview {
     animation: none;
   }
 

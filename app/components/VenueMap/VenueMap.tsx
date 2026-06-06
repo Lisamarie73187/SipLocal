@@ -69,6 +69,8 @@ export function VenueMap({
   const previousVenueBoundsKeyRef = useRef('')
   const mapApiRef = useRef(map)
   mapApiRef.current = map
+  const clearFlyRequestRef = useRef(map.clearFlyRequest)
+  clearFlyRequestRef.current = map.clearFlyRequest
   const onHoverVenueRef = useRef(onHoverVenue)
   onHoverVenueRef.current = onHoverVenue
   const onVenueSelectRef = useRef(onVenueSelect)
@@ -359,6 +361,27 @@ export function VenueMap({
       setMapStatus('idle')
     }
   }, [clearMarkers, tokenValidationError])
+
+  useEffect(() => {
+    const instance = mapRef.current
+    const flyRequest = map.flyRequest
+    if (!instance || mapStatus !== 'ready' || !flyRequest) {
+      return
+    }
+
+    instance.flyTo({
+      center: [flyRequest.longitude, flyRequest.latitude],
+      zoom: flyRequest.zoom,
+      duration: 700,
+    })
+
+    const handleMoveEnd = (): void => {
+      clearFlyRequestRef.current()
+      instance.off('moveend', handleMoveEnd)
+    }
+
+    instance.once('moveend', handleMoveEnd)
+  }, [map.flyRequest, mapStatus])
 
   useEffect(() => {
     if (mapStatus !== 'ready') {

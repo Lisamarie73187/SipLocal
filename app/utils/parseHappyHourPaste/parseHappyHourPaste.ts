@@ -1,10 +1,18 @@
 import type { DayOfWeek } from '@/types/venue'
+import type { Database } from '@/types/database'
+
+export type ParsedHappyHourDeal = {
+  label: string
+  category?: Database['public']['Enums']['deal_category']
+  price_text?: string | null
+}
 
 export interface ParsedHappyHourSlot {
   days: DayOfWeek[]
   start_time: string
   end_time: string
   deal_summary: string | null
+  deals?: ParsedHappyHourDeal[]
 }
 
 export interface ParseHappyHourPasteResult {

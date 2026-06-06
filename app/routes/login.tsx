@@ -37,7 +37,7 @@ function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      void navigate({ to: safeRedirect })
+      void navigate({ to: '/welcome', search: { redirect: safeRedirect } })
     }
   }, [loading, user, navigate, safeRedirect])
 

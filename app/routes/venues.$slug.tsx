@@ -2,6 +2,10 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { ArrowLeft, Clock } from 'lucide-react'
 import { useMemo } from 'react'
 
+import { VenueHappyHourMenuImage } from '@/components/VenueHappyHourMenuImage/VenueHappyHourMenuImage'
+import { VenueClaimButton } from '@/components/VenueClaimButton/VenueClaimButton'
+import { VenueFavoriteButton } from '@/components/VenueFavoriteButton/VenueFavoriteButton'
+import { VenueTrustFooter } from '@/components/VenueTrustFooter/VenueTrustFooter'
 import { VenuePriceLevel } from '@/components/VenuePriceLevel/VenuePriceLevel'
 import { VenueThumbnail } from '@/components/VenueThumbnail/VenueThumbnail'
 import { Button } from '@/components/ui/button'
@@ -13,6 +17,7 @@ import {
   collectVenueCategories,
 } from '@/utils/happyHour'
 import { groupHappyHourSlotsForDisplay } from '@/utils/happyHourSchedule'
+import { getVenueTrustMeta } from '@/utils/venueTrust'
 import { cn } from '@/utils'
 
 export const Route = createFileRoute('/venues/$slug')({
@@ -49,6 +54,7 @@ function VenueDetailPage() {
   const status = getHappyHourStatus(venue.happy_hour_slots, now, timeZone)
   const category = getVenueCategoryLabel(collectVenueCategories(venue.happy_hour_slots))
   const scheduleGroups = groupHappyHourSlotsForDisplay(venue.happy_hour_slots)
+  const trustMeta = getVenueTrustMeta(venue)
 
   return (
     <main className="min-h-dvh bg-background pb-8">
@@ -68,9 +74,15 @@ function VenueDetailPage() {
         <p className="mt-2 text-xs font-semibold tracking-wide text-secondary uppercase">
           {category}
         </p>
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <h1 className="font-heading text-2xl font-bold text-dark">{venue.name}</h1>
-          <VenuePriceLevel level={venue.price_level} className="text-lg" />
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-heading text-2xl font-bold text-dark">{venue.name}</h1>
+            <VenuePriceLevel level={venue.price_level} className="text-lg" />
+          </div>
+          <VenueFavoriteButton
+            venueId={venue.id}
+            redirectTo={`/venues/${venue.slug}`}
+          />
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{venue.address_line1}</p>
         <p
@@ -106,6 +118,24 @@ function VenueDetailPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="px-4 pt-6">
+        <VenueHappyHourMenuImage venueId={venue.id} venueName={venue.name} />
+      </section>
+
+      {trustMeta ? (
+        <section className="px-4 pt-6">
+          <VenueTrustFooter
+            meta={trustMeta}
+            venueId={venue.id}
+            venueSlug={venue.slug}
+          />
+        </section>
+      ) : null}
+
+      <section className="px-4 pt-8">
+        <VenueClaimButton venueId={venue.id} venueSlug={venue.slug} />
       </section>
     </main>
   )

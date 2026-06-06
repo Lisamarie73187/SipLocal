@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { VenueDetail } from '@/types/venue'
 
-import { getVenueDisplaySubtitle } from './venueDisplay'
+import { getOwnerPreviewCardSubtitle, getVenueDisplaySubtitle } from './venueDisplay'
 
 const baseVenue = (): VenueDetail => ({
   id: 'v1',
@@ -30,6 +30,7 @@ const baseVenue = (): VenueDetail => ({
   yelp_review_count: null,
   last_scraped_at: null,
   last_verified_at: null,
+  community_verified_at: null,
   scraped_city: null,
   scraped_zip: null,
   scrape_content_hash: null,
@@ -62,6 +63,37 @@ describe('getVenueDisplaySubtitle', () => {
   it('ignores scrape notes', () => {
     expect(
       getVenueDisplaySubtitle({
+        ...baseVenue(),
+        description: 'Scrape note: Happy hour mentioned but no savable windows.',
+      }),
+    ).toBe('Happy hour spot')
+  })
+})
+
+describe('getOwnerPreviewCardSubtitle', () => {
+  it('matches the public map subtitle logic', () => {
+    expect(
+      getOwnerPreviewCardSubtitle({
+        ...baseVenue(),
+        venue_type: 'brewery',
+        description: 'Iconic Bend brewery with Northwest pub fare and house beers on tap.',
+      }),
+    ).toBe('Iconic Bend brewery with Northwest pub fare and house beers on tap.')
+  })
+
+  it('falls back to venue type when description is missing', () => {
+    expect(
+      getOwnerPreviewCardSubtitle({
+        ...baseVenue(),
+        venue_type: 'bar',
+        description: null,
+      }),
+    ).toBe('Bar')
+  })
+
+  it('ignores scrape notes like the public map', () => {
+    expect(
+      getOwnerPreviewCardSubtitle({
         ...baseVenue(),
         description: 'Scrape note: Happy hour mentioned but no savable windows.',
       }),

@@ -6,6 +6,13 @@ export interface MapViewport {
   zoom: number
 }
 
+export interface MapFlyRequest {
+  id: number
+  latitude: number
+  longitude: number
+  zoom: number
+}
+
 export interface UseMapOptions {
   initialViewport?: Partial<MapViewport>
 }
@@ -13,10 +20,13 @@ export interface UseMapOptions {
 export interface UseMapResult {
   viewport: MapViewport
   selectedVenueId: string | null
+  flyRequest: MapFlyRequest | null
   setViewport: (next: Partial<MapViewport>) => void
   selectVenue: (venueId: string | null) => void
   clearSelection: () => void
   flyToVenue: (latitude: number, longitude: number, zoom?: number) => void
+  flyToPoint: (latitude: number, longitude: number, zoom?: number) => void
+  clearFlyRequest: () => void
 }
 
 const DEFAULT_VIEWPORT: MapViewport = {
@@ -31,6 +41,7 @@ export function useMap(options: UseMapOptions = {}): UseMapResult {
     ...options.initialViewport,
   })
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
+  const [flyRequest, setFlyRequest] = useState<MapFlyRequest | null>(null)
 
   const setViewport = useCallback((next: Partial<MapViewport>): void => {
     setViewportState((current) => ({ ...current, ...next }))
@@ -44,7 +55,7 @@ export function useMap(options: UseMapOptions = {}): UseMapResult {
     setSelectedVenueId(null)
   }, [])
 
-  const flyToVenue = useCallback(
+  const flyToPoint = useCallback(
     (latitude: number, longitude: number, zoom = 14.2): void => {
       setViewportState((current) => ({
         ...current,
@@ -52,16 +63,36 @@ export function useMap(options: UseMapOptions = {}): UseMapResult {
         longitude,
         zoom,
       }))
+      setFlyRequest({
+        id: Date.now(),
+        latitude,
+        longitude,
+        zoom,
+      })
     },
     [],
   )
 
+  const flyToVenue = useCallback(
+    (latitude: number, longitude: number, zoom = 14.2): void => {
+      flyToPoint(latitude, longitude, zoom)
+    },
+    [flyToPoint],
+  )
+
+  const clearFlyRequest = useCallback((): void => {
+    setFlyRequest(null)
+  }, [])
+
   return {
     viewport,
     selectedVenueId,
+    flyRequest,
     setViewport,
     selectVenue,
     clearSelection,
     flyToVenue,
+    flyToPoint,
+    clearFlyRequest,
   }
 }

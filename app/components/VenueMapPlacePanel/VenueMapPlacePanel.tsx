@@ -3,13 +3,15 @@ import { useEffect, useRef } from 'react'
 
 import { NowBadge } from '@/components/NowBadge/NowBadge'
 import { VenueExpandedDetails } from '@/components/VenueExpandedDetails/VenueExpandedDetails'
+import { VenueFavoriteButton } from '@/components/VenueFavoriteButton/VenueFavoriteButton'
 import { VenueMapOverlayDirections } from '@/components/VenueMapOverlayDirections/VenueMapOverlayDirections'
 import { VenueMapOverlaySpecials } from '@/components/VenueMap/VenueMapOverlaySpecials'
 import { VenuePriceLevel } from '@/components/VenuePriceLevel/VenuePriceLevel'
 import { VenueThumbnail } from '@/components/VenueThumbnail/VenueThumbnail'
 import type { ViewDayFilter } from '@/hooks/useDiscoveryFilters'
 import type { VenueDetail } from '@/types/venue'
-import { getDealChipsForSlot, getTodayDealChips } from '@/utils/dealChips'
+import { getDealChipsForVenuePanel } from '@/utils/dealChips'
+import { getOwnerPreviewOverlayStatus } from '@/utils/ownerPreviewVenue'
 import { getVenueOverlayStatusForVenue } from '@/utils/venueOverlayStatus'
 import { getVenueDisplaySubtitle } from '@/utils/venueDisplay'
 import { getVenueTrustMeta } from '@/utils/venueTrust'
@@ -22,7 +24,9 @@ export interface VenueMapPlacePanelProps {
   venue: VenueDetail
   viewDay: ViewDayFilter
   distanceLabel?: string
-  onClose: () => void
+  onClose?: () => void
+  /** Owner portal static preview — same UI without map overlay positioning. */
+  preview?: boolean
 }
 
 export function VenueMapPlacePanel({
@@ -30,18 +34,21 @@ export function VenueMapPlacePanel({
   viewDay,
   distanceLabel,
   onClose,
+  preview = false,
 }: VenueMapPlacePanelProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
   const timeZone = venue.city.timezone
   const now = new Date()
-  const { placement, pinStatus, isLiveDay, statusBadgeLabel } = getVenueOverlayStatusForVenue(
-    venue,
-    viewDay,
+  const { placement, pinStatus, isLiveDay, statusBadgeLabel } = preview
+    ? getOwnerPreviewOverlayStatus(venue, now)
+    : getVenueOverlayStatusForVenue(venue, viewDay, now)
+  const dealChips = getDealChipsForVenuePanel(
+    venue.happy_hour_slots,
+    placement?.focusSlot ?? null,
     now,
+    timeZone,
+    6,
   )
-  const dealChips = placement
-    ? getDealChipsForSlot(venue.happy_hour_slots, placement.focusSlot, 6)
-    : getTodayDealChips(venue.happy_hour_slots, now, timeZone, 6)
   const hhWindow = placement?.hhWindow ?? null
   const subtitle = getVenueDisplaySubtitle(venue)
   const isOpenNow = pinStatus === 'happening_now'
@@ -49,13 +56,19 @@ export function VenueMapPlacePanel({
   const trustMeta = getVenueTrustMeta(venue, placement?.focusSlot)
 
   useEffect(() => {
+    if (preview) {
+      return
+    }
     closeRef.current?.focus()
-  }, [venue.id])
+  }, [preview, venue.id])
 
   return (
     <aside
-      className="venue-map-place-panel pointer-events-auto absolute z-40 flex flex-col bg-card shadow-xl"
-      role="dialog"
+      className={cn(
+        'venue-map-place-panel pointer-events-auto flex flex-col bg-card shadow-xl',
+        preview ? 'venue-map-place-panel--preview relative z-auto' : 'absolute z-40',
+      )}
+      role={preview ? 'region' : 'dialog'}
       aria-label={`${venue.name} details`}
     >
       <div className="relative shrink-0">
@@ -65,15 +78,17 @@ export function VenueMapPlacePanel({
           fallback="hidden"
           className="h-36 w-full sm:h-40"
         />
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm transition-colors hover:bg-card hover:text-foreground"
-          aria-label="Close"
-        >
-          <X className="size-4" />
-        </button>
+        {!preview ? (
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 flex size-8 items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm transition-colors hover:bg-card hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -119,11 +134,20 @@ export function VenueMapPlacePanel({
 
         <VenueMapOverlaySpecials chips={dealChips} />
 
-        <VenueMapOverlayDirections venue={venue} />
+        <div
+          className={cn(
+            'mt-4 flex items-center justify-between gap-3',
+            preview && 'justify-start',
+          )}
+        >
+          <VenueMapOverlayDirections venue={venue} className="mt-0" />
+          {!preview ? <VenueFavoriteButton venueId={venue.id} variant="overlay" /> : null}
+        </div>
 
         <VenueExpandedDetails
           venue={venue}
           trustMeta={trustMeta}
+          showInfoCorrection={!preview}
           className="mt-4 border-t border-border pt-4"
         />
       </div>

@@ -15,3 +15,21 @@ export function getVenueDisplaySubtitle(venue: VenueDetail): string {
 
   return 'Happy hour spot'
 }
+
+/** Raw description stored on the venue row (owner preview). */
+export function getStoredVenueDescription(description: string | null | undefined): string | null {
+  const trimmed = description?.trim()
+  return trimmed || null
+}
+
+/** Subtitle for owner live-preview cards — same logic as the public map. */
+export function getOwnerPreviewCardSubtitle(
+  venue: Pick<VenueDetail, 'description' | 'name' | 'venue_type'>,
+): string {
+  return getVenueDisplaySubtitle(venue as VenueDetail)
+}
+
+/** Owner preview — show stored description, including cleaned scrape notes. */
+export function getOwnerVenueDescriptionText(description: string | null | undefined): string | null {
+  return getStoredVenueDescription(description)
+}

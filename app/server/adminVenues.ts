@@ -10,6 +10,7 @@ import { parsedHappyHourSlotSchema } from '@/server/adminHappyHourPaste'
 import { parseHappyHourPasteSmart } from '@/lib/scrape/parseHappyHourWithAnthropic'
 import type { DayOfWeek } from '@/types/venue'
 import { rollupSlotConfidence } from '@/utils/venueTrust'
+import { classifyPendingVenueUpdate } from '@/utils/adminPendingUpdates/adminPendingUpdates'
 import type { Database } from '@/types/database'
 
 function toAuthError(error: unknown): Error {
@@ -177,8 +178,10 @@ export interface AdminVenueEditorData {
     place_id: string | null
     venue_type: Database['public']['Enums']['venue_type'] | null
     last_verified_at: string | null
+    community_verified_at: string | null
     last_scraped_at: string | null
     schedule_cadence: Database['public']['Enums']['schedule_cadence'] | null
+    image_url: string | null
   } | null
   slots: AdminVenueEditorSlot[]
   events: AdminVenueEditorEvent[]
@@ -430,6 +433,147 @@ export const listAdminVenues = createServerFn({ method: 'GET' })
     )
   })
 
+export interface AdminPendingVenueUpdate {
+  id: string
+  name: string
+  slug: string
+  address_line1: string
+  data_status: string
+  city_slug: string
+  city_name: string
+  pending_slot_count: number
+  updated_at: string
+  source: 'manager' | 'staff'
+}
+
+export interface AdminPendingUpdatesDashboard {
+  managerUpdates: AdminPendingVenueUpdate[]
+  staffReview: AdminPendingVenueUpdate[]
+}
+
+export const listPendingVenueUpdates = createServerFn({ method: 'GET' })
+  .inputValidator(
+    z.object({
+      citySlug: z.string().optional(),
+      limit: z.number().int().min(1).max(100).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<AdminPendingUpdatesDashboard> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const limit = data.limit ?? 25
+
+    let query = supabase
+      .from('venues')
+      .select(
+        `
+        id,
+        name,
+        slug,
+        address_line1,
+        data_status,
+        updated_at,
+        cities!inner ( slug, name ),
+        happy_hour_slots ( data_status, is_active, updated_at )
+      `,
+      )
+      .is('archived_at', null)
+      .order('updated_at', { ascending: false })
+      .limit(500)
+
+    if (data.citySlug) {
+      const { data: city, error: cityError } = await supabase
+        .from('cities')
+        .select('id')
+        .eq('slug', data.citySlug)
+        .maybeSingle()
+
+      if (cityError) {
+        throw cityError
+      }
+      if (!city) {
+        return { managerUpdates: [], staffReview: [] }
+      }
+      query = query.eq('city_id', city.id)
+    }
+
+    const [{ data: rows, error }, { data: managerRows, error: managerError }] = await Promise.all([
+      query,
+      supabase.from('venue_managers').select('venue_id'),
+    ])
+
+    if (error) {
+      throw error
+    }
+    if (managerError) {
+      throw managerError
+    }
+
+    const managerVenueIds = new Set((managerRows ?? []).map((row) => row.venue_id))
+
+    const pending = (rows ?? [])
+      .map((row) => {
+        const city = row.cities as { slug: string; name: string }
+        const slots = (row.happy_hour_slots ?? []).filter((slot) => slot.is_active !== false)
+        const pendingSlots = slots.filter((slot) => slot.data_status === 'pending_review')
+        const pending_slot_count = pendingSlots.length
+        const needsReview =
+          row.data_status === 'pending_review' ||
+          row.data_status === 'discovered' ||
+          row.data_status === 'no_happy_hour_found' ||
+          row.data_status === 'flagged' ||
+          pending_slot_count > 0
+
+        if (!needsReview) {
+          return null
+        }
+
+        const hasManager = managerVenueIds.has(row.id)
+        const slotUpdatedAt = pendingSlots.reduce<string | null>((latest, slot) => {
+          if (!slot.updated_at) {
+            return latest
+          }
+          if (!latest || slot.updated_at > latest) {
+            return slot.updated_at
+          }
+          return latest
+        }, null)
+        const updated_at =
+          [row.updated_at, slotUpdatedAt].filter(Boolean).sort().reverse()[0] ?? row.updated_at
+
+        const source = classifyPendingVenueUpdate(
+          hasManager,
+          pending_slot_count,
+          row.data_status,
+        )
+
+        return {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          address_line1: row.address_line1,
+          data_status: row.data_status,
+          city_slug: city.slug,
+          city_name: city.name,
+          pending_slot_count,
+          updated_at,
+          source,
+        }
+      })
+      .filter((row): row is AdminPendingVenueUpdate => row !== null)
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+
+    const managerUpdates = pending.filter((row) => row.source === 'manager').slice(0, limit)
+    const staffReview = pending.filter((row) => row.source === 'staff').slice(0, limit)
+
+    return { managerUpdates, staffReview }
+  })
+
 export const archiveAdminVenues = createServerFn({ method: 'POST' })
   .inputValidator(z.object({ venueIds: z.array(z.string().uuid()).min(1) }))
   .handler(async ({ data }): Promise<{ archivedCount: number; venueNames: string[] }> => {
@@ -634,6 +778,7 @@ export const getAdminVenueForEdit = createServerFn({ method: 'GET' })
         last_verified_at: venue.last_verified_at,
         last_scraped_at: venue.last_scraped_at,
         schedule_cadence: venue.schedule_cadence,
+        image_url: venue.image_url,
       },
       slots,
       events: (eventRows ?? []).map((event) => ({
@@ -840,6 +985,7 @@ export const getAdminVenueCreateDefaults = createServerFn({ method: 'GET' })
             last_verified_at: null,
             last_scraped_at: null,
             schedule_cadence: null,
+            image_url: null,
           }
         : null,
       slots: [],
@@ -1132,4 +1278,268 @@ export const pasteAdminVenueHappyHours = createServerFn({ method: 'POST' })
       warnings: parsed.warnings,
       parser: parsed.parser,
     }
+  })
+
+export interface VenueManagerListItem {
+  id: string
+  user_id: string
+  email: string | null
+  role: Database['public']['Enums']['venue_manager_role']
+  created_at: string
+}
+
+export const listVenueManagers = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ venueId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<VenueManagerListItem[]> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const { data: rows, error } = await supabase
+      .from('venue_managers')
+      .select('id, user_id, role, created_at')
+      .eq('venue_id', data.venueId)
+      .order('created_at')
+
+    if (error) {
+      throw error
+    }
+
+    const managers: VenueManagerListItem[] = []
+    for (const row of rows ?? []) {
+      const { data: userData } = await supabase.auth.admin.getUserById(row.user_id)
+      managers.push({
+        id: row.id,
+        user_id: row.user_id,
+        email: userData.user?.email ?? null,
+        role: row.role,
+        created_at: row.created_at,
+      })
+    }
+
+    return managers
+  })
+
+export const inviteVenueManager = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      venueId: z.string().uuid(),
+      email: z.string().email(),
+      role: z.enum(['owner', 'manager']).optional().default('manager'),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ ok: true; managePath: string; email: string }> => {
+    let adminId: string
+    try {
+      ;({ userId: adminId } = await requireAdmin())
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const email = data.email.trim().toLowerCase()
+
+    const { data: listed, error: listError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    })
+
+    if (listError) {
+      throw listError
+    }
+
+    const authUser = listed.users.find((user) => user.email?.toLowerCase() === email)
+    if (!authUser) {
+      throw new Error(
+        `No account found for ${email}. Ask them to sign up first, then add them again.`,
+      )
+    }
+
+    const { data: venue, error: venueError } = await supabase
+      .from('venues')
+      .select('slug, cities ( slug )')
+      .eq('id', data.venueId)
+      .single()
+
+    if (venueError || !venue) {
+      throw venueError ?? new Error('Venue not found')
+    }
+
+    const city = venue.cities
+    const citySlug = city && !Array.isArray(city) ? city.slug : 'bend-or'
+
+    const { error: insertError } = await supabase.from('venue_managers').insert({
+      venue_id: data.venueId,
+      user_id: authUser.id,
+      role: data.role,
+      invited_by: adminId,
+    })
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        throw new Error('This user already manages this venue.')
+      }
+      throw insertError
+    }
+
+    return {
+      ok: true,
+      managePath: `/manage/${venue.slug}`,
+      email,
+    }
+  })
+
+export const removeVenueManager = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ managerId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const { error } = await supabase.from('venue_managers').delete().eq('id', data.managerId)
+
+    if (error) {
+      throw error
+    }
+
+    return { ok: true }
+  })
+
+export interface VenueClaimRequestListItem {
+  id: string
+  venue_id: string
+  venue_name: string
+  venue_slug: string
+  user_id: string
+  user_email: string | null
+  message: string | null
+  status: Database['public']['Enums']['venue_claim_status']
+  created_at: string
+}
+
+export const listVenueClaimRequests = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ status: z.enum(['pending', 'approved', 'rejected']).optional() }))
+  .handler(async ({ data }): Promise<VenueClaimRequestListItem[]> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    let query = supabase
+      .from('venue_claim_requests')
+      .select(
+        `
+        id,
+        venue_id,
+        user_id,
+        message,
+        status,
+        created_at,
+        venues ( name, slug )
+      `,
+      )
+      .order('created_at', { ascending: false })
+
+    if (data.status) {
+      query = query.eq('status', data.status)
+    }
+
+    const { data: rows, error } = await query
+
+    if (error) {
+      throw error
+    }
+
+    const items: VenueClaimRequestListItem[] = []
+    for (const row of rows ?? []) {
+      const venue = row.venues
+      if (!venue || Array.isArray(venue)) {
+        continue
+      }
+      const { data: userData } = await supabase.auth.admin.getUserById(row.user_id)
+      items.push({
+        id: row.id,
+        venue_id: row.venue_id,
+        venue_name: venue.name,
+        venue_slug: venue.slug,
+        user_id: row.user_id,
+        user_email: userData.user?.email ?? null,
+        message: row.message,
+        status: row.status,
+        created_at: row.created_at,
+      })
+    }
+
+    return items
+  })
+
+export const reviewVenueClaimRequest = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      claimId: z.string().uuid(),
+      action: z.enum(['approve', 'reject']),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    let adminId: string
+    try {
+      ;({ userId: adminId } = await requireAdmin())
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { data: claim, error: claimError } = await supabase
+      .from('venue_claim_requests')
+      .select('id, venue_id, user_id, status')
+      .eq('id', data.claimId)
+      .single()
+
+    if (claimError || !claim) {
+      throw claimError ?? new Error('Claim not found')
+    }
+
+    if (claim.status !== 'pending') {
+      throw new Error('This claim was already reviewed.')
+    }
+
+    const reviewedAt = new Date().toISOString()
+    const newStatus = data.action === 'approve' ? 'approved' : 'rejected'
+
+    const { error: updateError } = await supabase
+      .from('venue_claim_requests')
+      .update({
+        status: newStatus,
+        reviewed_by: adminId,
+        reviewed_at: reviewedAt,
+      })
+      .eq('id', data.claimId)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    if (data.action === 'approve') {
+      const { error: insertError } = await supabase.from('venue_managers').insert({
+        venue_id: claim.venue_id,
+        user_id: claim.user_id,
+        role: 'owner',
+        invited_by: adminId,
+      })
+
+      if (insertError && insertError.code !== '23505') {
+        throw insertError
+      }
+    }
+
+    return { ok: true }
   })

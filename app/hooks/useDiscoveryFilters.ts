@@ -62,6 +62,12 @@ function statusFiltersMatchDefault(statusFilters: StatusFilter[]): boolean {
   return DEFAULT_STATUS_FILTERS.every((status) => statusFilters.includes(status))
 }
 
+function withoutLiveStatusFilters(statusFilters: StatusFilter[]): StatusFilter[] {
+  return statusFilters.filter(
+    (item) => item !== 'happening_now' && item !== 'starting_soon',
+  )
+}
+
 function cloneFilters(filters: DiscoveryFiltersState): DiscoveryFiltersState {
   return {
     ...filters,
@@ -131,17 +137,19 @@ export function useDiscoveryFilters(): UseDiscoveryFiltersResult {
   }, [])
 
   const setAppliedViewDay = useCallback((viewDay: ViewDayFilter): void => {
-    setApplied((current) => {
-      const statusFilters = current.statusFilters.filter((item) => item !== 'happening_now')
-      return { ...current, viewDay, statusFilters }
-    })
+    setApplied((current) => ({
+      ...current,
+      viewDay,
+      statusFilters: withoutLiveStatusFilters(current.statusFilters),
+    }))
   }, [])
 
   const setAppliedTimeAt = useCallback((timeAtMinutes: number | null): void => {
-    setApplied((current) => {
-      const statusFilters = current.statusFilters.filter((item) => item !== 'happening_now')
-      return { ...current, timeAtMinutes, statusFilters }
-    })
+    setApplied((current) => ({
+      ...current,
+      timeAtMinutes,
+      statusFilters: withoutLiveStatusFilters(current.statusFilters),
+    }))
   }, [])
 
   const clearAppliedTime = useCallback((): void => {

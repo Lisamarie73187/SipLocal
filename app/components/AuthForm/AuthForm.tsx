@@ -62,7 +62,7 @@ export function AuthForm({ redirectTo, initialMode = 'sign-in' }: AuthFormProps)
     }
 
     if (result.ok && !result.needsEmailConfirmation) {
-      void navigate({ to: redirectTo })
+      void navigate({ to: '/welcome', search: { redirect: redirectTo } })
       return
     }
   }

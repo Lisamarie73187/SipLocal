@@ -55,6 +55,7 @@ const venue = (slots: HappyHourSlot[]): VenueDetail => ({
   yelp_review_count: null,
   last_scraped_at: null,
   last_verified_at: null,
+  community_verified_at: null,
   scraped_city: null,
   scraped_zip: null,
   scrape_content_hash: null,

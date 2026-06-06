@@ -4,16 +4,7 @@ import { ScrapeApiError } from './errors'
 const PLACES_NEARBY_URL = 'https://places.googleapis.com/v1/places:searchNearby'
 const PLACES_TEXT_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText'
 
-/** Table A types for bars, restaurants, and nightlife */
-export const DEFAULT_VENUE_INCLUDED_TYPES = [
-  'bar',
-  'restaurant',
-  'night_club',
-  'wine_bar',
-  'pub',
-] as const
-
-const FIELD_MASK = [
+const SEARCH_FIELD_MASK = [
   'places.id',
   'places.displayName',
   'places.formattedAddress',
@@ -26,6 +17,32 @@ const FIELD_MASK = [
   'places.primaryType',
   'places.types',
 ].join(',')
+
+const PLACE_DETAIL_FIELD_MASK = [
+  'id',
+  'displayName',
+  'formattedAddress',
+  'location',
+  'nationalPhoneNumber',
+  'websiteUri',
+  'priceLevel',
+  'regularOpeningHours',
+  'photos',
+  'primaryType',
+  'types',
+].join(',')
+
+/** @deprecated Use SEARCH_FIELD_MASK — kept for nearby search helper. */
+const FIELD_MASK = SEARCH_FIELD_MASK
+
+/** Table A types for bars, restaurants, and nightlife */
+export const DEFAULT_VENUE_INCLUDED_TYPES = [
+  'bar',
+  'restaurant',
+  'night_club',
+  'wine_bar',
+  'pub',
+] as const
 
 export interface GooglePlacesSearchOptions {
   latitude: number
@@ -133,7 +150,7 @@ async function postSearchNearby(
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': FIELD_MASK,
+      'X-Goog-FieldMask': SEARCH_FIELD_MASK,
     },
     body: JSON.stringify(body),
   })
@@ -244,37 +261,21 @@ export interface FindGooglePlaceByTextOptions {
   latitude: number
   longitude: number
   radiusMeters?: number
+  maxResults?: number
 }
 
-/**
- * Resolves a venue name/address to a Google place (for Bend Source / Yelp discovery).
- */
-export async function findGooglePlaceByText(
-  options: FindGooglePlaceByTextOptions,
-): Promise<GooglePlaceVenue | null> {
-  const apiKey = getGooglePlacesApiKey()
-  const radiusMeters = options.radiusMeters ?? 15_000
-
+async function postSearchText(
+  apiKey: string,
+  body: Record<string, unknown>,
+): Promise<GoogleSearchNearbyResponse> {
   const response = await fetch(PLACES_TEXT_SEARCH_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Goog-Api-Key': apiKey,
-      'X-Goog-FieldMask': FIELD_MASK,
+      'X-Goog-FieldMask': SEARCH_FIELD_MASK,
     },
-    body: JSON.stringify({
-      textQuery: options.textQuery,
-      maxResultCount: 1,
-      locationBias: {
-        circle: {
-          center: {
-            latitude: options.latitude,
-            longitude: options.longitude,
-          },
-          radius: radiusMeters,
-        },
-      },
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
@@ -285,9 +286,90 @@ export async function findGooglePlaceByText(
     )
   }
 
-  const data = (await response.json()) as GoogleSearchNearbyResponse
-  const raw = data.places?.[0]
-  return raw ? mapPlace(raw) : null
+  return (await response.json()) as GoogleSearchNearbyResponse
+}
+
+function mapPlacesFromSearchResponse(data: GoogleSearchNearbyResponse): GooglePlaceVenue[] {
+  const venues: GooglePlaceVenue[] = []
+  const seenIds = new Set<string>()
+
+  for (const raw of data.places ?? []) {
+    const mapped = mapPlace(raw)
+    if (!mapped || seenIds.has(mapped.placeId)) {
+      continue
+    }
+    seenIds.add(mapped.placeId)
+    venues.push(mapped)
+  }
+
+  return venues
+}
+
+/**
+ * Text search returning up to `maxResults` Google places (default 5).
+ */
+export async function searchGooglePlacesByText(
+  options: FindGooglePlaceByTextOptions,
+): Promise<GooglePlaceVenue[]> {
+  const apiKey = getGooglePlacesApiKey()
+  const radiusMeters = options.radiusMeters ?? 15_000
+  const maxResultCount = Math.min(Math.max(options.maxResults ?? 5, 1), 10)
+
+  const data = await postSearchText(apiKey, {
+    textQuery: options.textQuery,
+    maxResultCount,
+    locationBias: {
+      circle: {
+        center: {
+          latitude: options.latitude,
+          longitude: options.longitude,
+        },
+        radius: radiusMeters,
+      },
+    },
+  })
+
+  return mapPlacesFromSearchResponse(data)
+}
+
+/**
+ * Resolves a venue name/address to a Google place (for Bend Source / Yelp discovery).
+ */
+export async function findGooglePlaceByText(
+  options: FindGooglePlaceByTextOptions,
+): Promise<GooglePlaceVenue | null> {
+  const places = await searchGooglePlacesByText({ ...options, maxResults: 1 })
+  return places[0] ?? null
+}
+
+/**
+ * Fetches a single place by Google Places ID.
+ */
+export async function getGooglePlaceById(placeId: string): Promise<GooglePlaceVenue | null> {
+  const apiKey = getGooglePlacesApiKey()
+  const encodedId = encodeURIComponent(placeId)
+
+  const response = await fetch(`https://places.googleapis.com/v1/places/${encodedId}`, {
+    headers: {
+      'X-Goog-Api-Key': apiKey,
+      'X-Goog-FieldMask': PLACE_DETAIL_FIELD_MASK,
+    },
+  })
+
+  if (response.status === 404) {
+    return null
+  }
+
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new ScrapeApiError(
+      `Google Places getPlace failed (${response.status}): ${detail.slice(0, 500)}`,
+      { code: 'api_error', provider: 'google', statusCode: response.status },
+    )
+  }
+
+  const raw = (await response.json()) as GooglePlaceRaw
+  return mapPlace(raw)
 }
 
 export async function fetchVenuesFromGoogle(

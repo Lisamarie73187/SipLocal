@@ -10,7 +10,7 @@ describe('normalizeAnthropicHappyHourResponse', () => {
           days: [1, 2, 3, 4, 5],
           start_time: '16:00',
           end_time: '18:00',
-          deal_summary: '$5 pints',
+          deals: [{ label: 'Draft pints', category: 'drinks', price_text: '$5' }],
         },
       ],
     })
@@ -20,7 +20,8 @@ describe('normalizeAnthropicHappyHourResponse', () => {
         days: [1, 2, 3, 4, 5],
         start_time: '16:00',
         end_time: '18:00',
-        deal_summary: '$5 pints',
+        deal_summary: null,
+        deals: [{ label: 'Draft pints', category: 'drinks', price_text: '$5' }],
       },
     ])
   })
@@ -47,5 +48,25 @@ describe('normalizeAnthropicHappyHourResponse', () => {
 
     expect(result.slots).toHaveLength(0)
     expect(result.warnings[0]).toContain('expected schedule format')
+  })
+
+  it('splits comma-separated deal_summary into separate deal rows', () => {
+    const result = normalizeAnthropicHappyHourResponse({
+      slots: [
+        {
+          days: [1, 2, 3, 4, 5],
+          start_time: '16:00',
+          end_time: '18:00',
+          deal_summary: '$5 draft pints, $7 apps, half-off house wine',
+        },
+      ],
+    })
+
+    expect(result.slots[0]?.deal_summary).toBeNull()
+    expect(result.slots[0]?.deals).toEqual([
+      { label: 'draft pints', category: 'drinks', price_text: '$5' },
+      { label: 'apps', category: 'food', price_text: '$7' },
+      { label: 'half-off house wine', category: 'drinks', price_text: null },
+    ])
   })
 })

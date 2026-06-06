@@ -7,7 +7,8 @@ import { useDiscoveryFilters } from '@/hooks/useDiscoveryFilters'
 import { useEventTimeline } from '@/hooks/useEventTimeline'
 import { useEvents } from '@/hooks/useEvents'
 import { useHappyHourTimeline } from '@/hooks/useHappyHourTimeline'
-import { useMap } from '@/hooks/useMap'
+import { useMap, type MapViewport } from '@/hooks/useMap'
+import { useUserLocation } from '@/hooks/useUserLocation'
 import { useVenues } from '@/hooks/useVenues'
 import type { VenueDetail } from '@/types/venue'
 import { distanceMiles, formatDistanceMiles } from '@/utils/geo'
@@ -30,22 +31,41 @@ export function DiscoveryView() {
     refetch: refetchEvents,
   } = useEvents({ citySlug: 'bend-or', refetchOnFocus: true })
   const map = useMap()
+  const {
+    userLocation,
+    loading: locatingUser,
+    error: locationError,
+    requestLocation,
+    clearError: clearLocationError,
+  } = useUserLocation()
   const discoveryFilters = useDiscoveryFilters()
   const { contentType } = discoveryFilters.applied
   const [hoveredVenueId, setHoveredVenueId] = useState<string | null>(null)
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
+  const distanceOrigin = useMemo((): MapViewport => {
+    if (userLocation) {
+      return {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        zoom: map.viewport.zoom,
+      }
+    }
+
+    return map.viewport
+  }, [map.viewport, userLocation])
+
   const venueTimeline = useHappyHourTimeline({
     venues,
     filters: discoveryFilters.applied,
-    origin: map.viewport,
+    origin: distanceOrigin,
   })
 
   const eventTimeline = useEventTimeline({
     events,
     filters: discoveryFilters.applied,
-    origin: map.viewport,
+    origin: distanceOrigin,
   })
 
   const eventMapVenues = useMemo(() => {
@@ -98,9 +118,27 @@ export function DiscoveryView() {
       return undefined
     }
     return formatDistanceMiles(
-      distanceMiles(map.viewport.latitude, map.viewport.longitude, venue.lat, venue.lng),
+      distanceMiles(
+        distanceOrigin.latitude,
+        distanceOrigin.longitude,
+        venue.lat,
+        venue.lng,
+      ),
     )
-  }, [map.selectedVenueId, map.viewport, mapVenues, venues])
+  }, [distanceOrigin, map.selectedVenueId, mapVenues, venues])
+
+  const handleUseMyLocation = useCallback((): void => {
+    clearLocationError()
+    requestLocation()
+  }, [clearLocationError, requestLocation])
+
+  useEffect(() => {
+    if (!userLocation) {
+      return
+    }
+
+    map.flyToPoint(userLocation.latitude, userLocation.longitude, 14.2)
+  }, [map.flyToPoint, userLocation])
 
   const { selectVenue, clearSelection } = map
 
@@ -213,12 +251,17 @@ export function DiscoveryView() {
         startingSoonCount={startingSoonCount}
         resultCount={resultCount}
         isLiveDay={isLiveDay}
+        onUseMyLocation={handleUseMyLocation}
+        useMyLocationLoading={locatingUser}
+        useMyLocationActive={userLocation != null}
+        locationError={locationError}
       />
       <div className="discovery-page__main">
         <div className="discovery-content-inset discovery-page__frame">
           <div className="discovery-shell">
             <TimelinePanel
               contentType={contentType}
+              citySlug="bend-or"
               venueSections={venueTimeline.sections}
               eventSections={eventTimeline.sections}
               isLiveDay={isLiveDay}

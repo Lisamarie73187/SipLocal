@@ -33,6 +33,7 @@ const EVENT_SELECT = `
     venue_type,
     website_url,
     last_verified_at,
+    community_verified_at,
     last_scraped_at
   )
 `

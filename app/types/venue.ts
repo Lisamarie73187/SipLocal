@@ -15,6 +15,8 @@ export type HappyHourSlot = Database['public']['Tables']['happy_hour_slots']['Ro
 export type HappyHourDeal = Database['public']['Tables']['happy_hour_deals']['Row']
 export type Favorite = Database['public']['Tables']['favorites']['Row']
 export type Profile = Database['public']['Tables']['profiles']['Row']
+export type ProfileVisitorType = Database['public']['Enums']['profile_visitor_type']
+export type ProfileGender = Database['public']['Enums']['profile_gender']
 
 export interface VenueWithCity extends Venue {
   city: Pick<City, 'slug' | 'name' | 'timezone'>

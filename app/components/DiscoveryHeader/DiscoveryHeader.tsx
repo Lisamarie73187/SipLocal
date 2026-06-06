@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { CircleUser, Loader2, MapPin, Navigation, Search, X } from 'lucide-react'
+import { MapPin, Navigation, Search, X } from 'lucide-react'
 
-import { useAccountLink } from '@/hooks/useAccountLink'
+import { AccountMenu } from '@/components/AccountMenu/AccountMenu'
 
 import type { UseDiscoveryFiltersResult } from '@/hooks/useDiscoveryFilters'
 import { cn } from '@/utils'
@@ -18,6 +17,10 @@ export interface DiscoveryHeaderProps {
   startingSoonCount: number
   resultCount: number
   isLiveDay: boolean
+  onUseMyLocation?: () => void
+  useMyLocationLoading?: boolean
+  useMyLocationActive?: boolean
+  locationError?: string | null
 }
 
 export function DiscoveryHeader({
@@ -27,6 +30,10 @@ export function DiscoveryHeader({
   startingSoonCount,
   resultCount,
   isLiveDay,
+  onUseMyLocation,
+  useMyLocationLoading = false,
+  useMyLocationActive = false,
+  locationError = null,
 }: DiscoveryHeaderProps) {
   const { applied, setSearch } = filters
   const searchPlaceholder =
@@ -34,25 +41,15 @@ export function DiscoveryHeader({
       ? 'Search events, venues, or trivia…'
       : 'Search venues, vibes, or deals…'
   const [cityQuery, setCityQuery] = useState(cityName)
-  const accountLink = useAccountLink()
   const hasSearch = applied.search.trim().length > 0
 
   return (
     <header className="discovery-header shrink-0">
       <div className="discovery-content-inset pb-5">
         <div className="discovery-header__brand relative pt-6 pb-5">
-          <Link
-            to={accountLink.href}
-            search={accountLink.search}
-            className="absolute top-6 right-0 flex size-11 items-center justify-center rounded-xl border border-border/70 bg-card text-dark shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
-            aria-label={accountLink.label}
-          >
-            {accountLink.loading ? (
-              <Loader2 className="size-5 animate-spin" aria-hidden />
-            ) : (
-              <CircleUser className="size-5" strokeWidth={1.75} />
-            )}
-          </Link>
+          <div className="absolute top-6 right-0">
+            <AccountMenu />
+          </div>
           <SipSocialLogo variant="full" />
         </div>
 
@@ -92,16 +89,31 @@ export function DiscoveryHeader({
 
             <button
               type="button"
-              title="Coming soon"
+              onClick={onUseMyLocation}
+              disabled={!onUseMyLocation || useMyLocationLoading}
+              aria-pressed={useMyLocationActive}
               className={cn(
-                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-4 text-sm font-semibold text-dark shadow-sm transition-colors',
-                'hover:border-primary/25 hover:bg-card',
+                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold shadow-sm transition-colors disabled:opacity-60',
+                useMyLocationActive
+                  ? 'border-primary/40 bg-primary/10 text-dark'
+                  : 'border-border/70 bg-card text-dark hover:border-primary/25 hover:bg-card',
               )}
             >
               <Navigation className="size-4 text-primary" aria-hidden />
-              <span className="whitespace-nowrap">Use my location</span>
+              <span className="whitespace-nowrap">
+                {useMyLocationLoading
+                  ? 'Locating…'
+                  : useMyLocationActive
+                    ? 'My location'
+                    : 'Use my location'}
+              </span>
             </button>
           </div>
+          {locationError ? (
+            <p className="mt-2 text-xs text-destructive" role="alert">
+              {locationError}
+            </p>
+          ) : null}
         </div>
 
         <div className="discovery-header__filters pt-3">

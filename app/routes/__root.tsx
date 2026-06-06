@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import appCss from '../styles/globals.css?url'
+import { AppProviders } from '@/components/AppProviders/AppProviders'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,8 +16,17 @@ export const Route = createRootRoute({
         content:
           'Discover happy hours in Bend, OR. Built for locals and tourists, scaling to any city.',
       },
+      { name: 'theme-color', content: '#FF6B57' },
     ],
-    links: [{ rel: 'stylesheet', href: appCss }],
+    links: [
+      { rel: 'stylesheet', href: appCss },
+      { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+      { rel: 'icon', href: '/favicon.png', type: 'image/png' },
+      { rel: 'icon', href: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { rel: 'icon', href: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
+      { rel: 'manifest', href: '/manifest.json' },
+    ],
   }),
   component: RootLayout,
   notFoundComponent: RootNotFound,
@@ -43,7 +53,9 @@ function RootLayout() {
         <HeadContent />
       </head>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
-        <Outlet />
+        <AppProviders>
+          <Outlet />
+        </AppProviders>
         <TanStackDevtools
           config={{ position: 'bottom-right' }}
           plugins={[
