@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { EventType } from '@/types/event'
 import { EVENT_TYPE_LABELS } from '@/utils/eventType'
+import { logger } from '@/utils/logger'
 
 import { getAnthropicApiKey, getAnthropicHappyHourModel } from './anthropicConfig'
 import { ScrapeApiError } from './errors'
@@ -24,16 +25,35 @@ export interface ParseEventsResult {
   warnings: string[]
 }
 
+const nullableString = z
+  .union([z.string(), z.number()])
+  .nullable()
+  .optional()
+  .transform((value) => (value === null || value === undefined ? value : String(value)))
+
+const nullableDayOfWeek = z
+  .union([z.number(), z.string()])
+  .nullable()
+  .optional()
+  .transform((value) => {
+    if (value === null || value === undefined) {
+      return value
+    }
+    const num = typeof value === 'number' ? value : Number(value)
+    return Number.isInteger(num) ? num : null
+  })
+  .pipe(z.number().int().min(0).max(6).nullable().optional())
+
 const aiResponseSchema = z.object({
   events: z.array(
     z.object({
       title: z.string(),
-      description: z.string().nullable().optional(),
-      event_type: z.string(),
-      event_date: z.string().nullable().optional(),
-      day_of_week: z.number().int().min(0).max(6).nullable().optional(),
-      start_time: z.string(),
-      end_time: z.string().nullable().optional(),
+      description: nullableString,
+      event_type: z.union([z.string(), z.null(), z.undefined()]).transform((value) => value ?? ''),
+      event_date: nullableString,
+      day_of_week: nullableDayOfWeek,
+      start_time: z.union([z.string(), z.null(), z.undefined()]).transform((value) => value ?? ''),
+      end_time: nullableString,
     }),
   ),
   warnings: z.array(z.string()).optional(),
@@ -66,6 +86,10 @@ function normalizeDate(value: string): string | null {
 export function normalizeAnthropicEventsResponse(raw: unknown): ParseEventsResult {
   const parsed = aiResponseSchema.safeParse(raw)
   if (!parsed.success) {
+    logger.warn('AI events response failed schema validation', {
+      issues: parsed.error.issues,
+      raw,
+    })
     return { events: [], warnings: ['AI response did not match the expected event format.'] }
   }
 

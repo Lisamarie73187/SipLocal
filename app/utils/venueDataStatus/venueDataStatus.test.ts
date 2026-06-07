@@ -21,8 +21,20 @@ describe('reconcileVenueDataStatus', () => {
 })
 
 describe('validateVenueBeforeSave', () => {
-  it('requires slots for live', () => {
+  it('requires slots or events for live', () => {
     expect(validateVenueBeforeSave('live', 0, false)).toContain('happy hour slot')
+  })
+
+  it('allows live with events but no slots', () => {
+    expect(validateVenueBeforeSave('live', 0, false, 1)).toBeNull()
+  })
+
+  it('allows publishing with events but no slots', () => {
+    expect(validateVenueBeforeSave('live', 0, true, 2)).toBeNull()
+  })
+
+  it('still requires live status to publish even with events', () => {
+    expect(validateVenueBeforeSave('pending_review', 0, true, 1)).toContain('Set data status to Live')
   })
 })
 

@@ -207,6 +207,9 @@ export function AdminVenueEventsSection({
         if (!event.start_time.trim()) {
           throw new Error(`Invalid start time for “${event.title}”.`)
         }
+        if (event.schedule_mode === 'dated' && !event.event_date.trim()) {
+          throw new Error(`Pick a date for “${event.title}” (or switch it to recurring).`)
+        }
       }
 
       const result = await saveAdminVenueEvents({

@@ -23,12 +23,15 @@ export function validateVenueBeforeSave(
   requested: VenueDataStatus,
   slotCount: number,
   isPublished: boolean,
+  eventCount = 0,
 ): string | null {
-  if (requested === 'live' && slotCount === 0) {
-    return 'Add at least one happy hour slot before setting status to Live.'
+  const hasHappyHourOrEvents = slotCount > 0 || eventCount > 0
+
+  if (requested === 'live' && !hasHappyHourOrEvents) {
+    return 'Add at least one happy hour slot or event before setting status to Live.'
   }
-  if (isPublished && slotCount === 0) {
-    return 'Add at least one happy hour slot before publishing on the map.'
+  if (isPublished && !hasHappyHourOrEvents) {
+    return 'Add at least one happy hour slot or event before publishing on the map.'
   }
   if (isPublished && requested !== 'live') {
     return 'Set data status to Live before publishing on the map.'
@@ -39,12 +42,13 @@ export function validateVenueBeforeSave(
 export function venueStatusMismatch(
   dataStatus: string,
   slotCount: number,
+  eventCount = 0,
 ): string | null {
   if (dataStatus === 'no_happy_hour_found' && slotCount > 0) {
     return 'Has happy hour slots saved, but status says no happy hour found. Edit the venue and set status to Pending review or Live, or remove the slots.'
   }
-  if (dataStatus === 'live' && slotCount === 0) {
-    return 'Status is Live but there are no happy hour slots — the map will not show deals for this place.'
+  if (dataStatus === 'live' && slotCount === 0 && eventCount === 0) {
+    return 'Status is Live but there are no happy hour slots or events — the map will not show deals for this place.'
   }
   return null
 }

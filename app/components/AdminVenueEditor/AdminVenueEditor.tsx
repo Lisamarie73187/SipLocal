@@ -241,6 +241,7 @@ export function AdminVenueEditor({
       venue.data_status,
       cleanedSlots.length,
       venue.is_published,
+      initialEvents.length,
     )
     if (validationError) {
       setError(validationError)
@@ -303,13 +304,15 @@ export function AdminVenueEditor({
     }
   }
 
-  const statusWarning = venueStatusMismatch(venue.data_status, slots.length)
+  const statusWarning = venueStatusMismatch(venue.data_status, slots.length, initialEvents.length)
   const activeSlotCount = slots.filter((slot) => slot.is_active).length
+  const eventCount = initialEvents.length
+  const hasHappyHourOrEvents = activeSlotCount > 0 || eventCount > 0
   const readyForMap =
     venue.data_status === 'live' &&
     venue.is_published &&
-    activeSlotCount > 0 &&
-    slots.some((slot) => slot.start_time && slot.end_time)
+    hasHappyHourOrEvents &&
+    (eventCount > 0 || slots.some((slot) => slot.start_time && slot.end_time))
 
   const handlePublishToMap = (checked: boolean): void => {
     if (checked) {
@@ -324,8 +327,9 @@ export function AdminVenueEditor({
       <section className="space-y-4 rounded-xl border-2 border-primary/25 bg-primary/5 p-5 shadow-sm">
         <h2 className="font-heading text-lg font-semibold text-dark">Publish to map</h2>
         <p className="text-sm text-muted-foreground">
-          Turn this on to show the venue on the public discovery map. You still need happy hour
-          slots below, then click <span className="font-medium text-dark">Save venue</span>.
+          Turn this on to show the venue on the public discovery map. You still need at least one
+          happy hour slot or event, then click{' '}
+          <span className="font-medium text-dark">Save venue</span>.
         </p>
         <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-card px-4 py-3">
           <input
@@ -349,9 +353,9 @@ export function AdminVenueEditor({
           <li className={venue.is_published ? 'text-open' : ''}>
             {venue.is_published ? '✓' : '○'} Published to map
           </li>
-          <li className={activeSlotCount > 0 ? 'text-open' : ''}>
-            {activeSlotCount > 0 ? '✓' : '○'} {activeSlotCount} active happy hour slot
-            {activeSlotCount === 1 ? '' : 's'}
+          <li className={hasHappyHourOrEvents ? 'text-open' : ''}>
+            {hasHappyHourOrEvents ? '✓' : '○'} {activeSlotCount} active happy hour slot
+            {activeSlotCount === 1 ? '' : 's'}, {eventCount} event{eventCount === 1 ? '' : 's'}
           </li>
         </ul>
         {readyForMap ? (

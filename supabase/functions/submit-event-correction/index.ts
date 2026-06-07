@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse({
       submissionId,
-      message: "Thanks for the heads up! We'll take a look and update this event soon.",
+      message: 'Thanks for letting us know!! Not all heros wear capes',
     })
   } catch (error) {
     if (error instanceof Response) {

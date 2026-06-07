@@ -265,10 +265,25 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
     const { venue, slots } = data
     const websiteUrl = venue.website_url?.trim() ? venue.website_url.trim() : null
 
+    let eventCount = 0
+    if (venue.id) {
+      const { count, error: eventCountError } = await supabase
+        .from('events')
+        .select('id', { count: 'exact', head: true })
+        .eq('venue_id', venue.id)
+
+      if (eventCountError) {
+        throw eventCountError
+      }
+
+      eventCount = count ?? 0
+    }
+
     const validationError = validateVenueBeforeSave(
       venue.data_status,
       slots.length,
       venue.is_published,
+      eventCount,
     )
     if (validationError) {
       throw new Error(validationError)
@@ -502,11 +517,22 @@ export const pasteAdminVenueHappyHours = createServerFn({ method: 'POST' })
     }
 
     const activeSlotCount = slotCount ?? 0
+
+    const { count: eventCount, error: eventCountError } = await supabase
+      .from('events')
+      .select('id', { count: 'exact', head: true })
+      .eq('venue_id', data.venueId)
+
+    if (eventCountError) {
+      throw eventCountError
+    }
+
     const dataStatus = reconcileVenueDataStatus(venue.data_status, activeSlotCount)
     const validationError = validateVenueBeforeSave(
       dataStatus,
       activeSlotCount,
       venue.is_published,
+      eventCount ?? 0,
     )
     if (validationError) {
       throw new Error(validationError)

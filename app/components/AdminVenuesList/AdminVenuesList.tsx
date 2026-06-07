@@ -656,9 +656,17 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
                       className="mt-2 space-y-1.5"
                     />
 
-                    {venueStatusMismatch(venue.data_status, venue.happy_hour_slot_count) ? (
+                    {venueStatusMismatch(
+                      venue.data_status,
+                      venue.happy_hour_slot_count,
+                      venue.event_count,
+                    ) ? (
                       <p className="mt-2 text-xs text-secondary">
-                        {venueStatusMismatch(venue.data_status, venue.happy_hour_slot_count)}
+                        {venueStatusMismatch(
+                          venue.data_status,
+                          venue.happy_hour_slot_count,
+                          venue.event_count,
+                        )}
                       </p>
                     ) : null}
                   </div>
