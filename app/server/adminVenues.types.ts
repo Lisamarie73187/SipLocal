@@ -76,7 +76,8 @@ export interface AdminVenueEditorData {
     is_published: boolean
     is_featured: boolean
     place_id: string | null
-    venue_type: Database['public']['Enums']['venue_type'] | null
+    venue_types: Database['public']['Enums']['venue_type'][]
+    vibes: Database['public']['Enums']['venue_vibe'][]
     last_verified_at: string | null
     community_verified_at: string | null
     last_scraped_at: string | null

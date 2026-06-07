@@ -84,10 +84,6 @@ export function DiscoveryView() {
       : venueTimeline.filteredVenues.length
   }, [contentType, venueTimeline.filteredVenues.length, eventTimeline.filteredEvents.length])
 
-  const happeningNowCount =
-    contentType === 'events' ? eventTimeline.happeningNowCount : venueTimeline.happeningNowCount
-  const startingSoonCount =
-    contentType === 'events' ? eventTimeline.startingSoonCount : venueTimeline.startingSoonCount
   const isLiveDay = contentType === 'events' ? eventTimeline.isLiveDay : venueTimeline.isLiveDay
 
   const loading = contentType === 'events' ? eventsLoading : venuesLoading
@@ -247,10 +243,7 @@ export function DiscoveryView() {
       <DiscoveryHeader
         cityName={cityName}
         filters={discoveryFilters}
-        happeningNowCount={happeningNowCount}
-        startingSoonCount={startingSoonCount}
         resultCount={resultCount}
-        isLiveDay={isLiveDay}
         onUseMyLocation={handleUseMyLocation}
         useMyLocationLoading={locatingUser}
         useMyLocationActive={userLocation != null}

@@ -1,6 +1,8 @@
 import type { DealFilter, PriceFilter } from '@/hooks/useDiscoveryFilters'
 import type { VenueTypeFilter } from '@/utils/venueType'
 import { VENUE_TYPE_EMOJI, VENUE_TYPE_LABELS } from '@/utils/venueType'
+import type { VibeFilter } from '@/utils/vibe'
+import { VIBE_EMOJI, VIBE_LABELS } from '@/utils/vibe'
 
 export interface FilterOption<T extends string = string> {
   id: T
@@ -21,13 +23,16 @@ export const VENUE_TYPE_FILTER_OPTIONS: FilterOption<VenueTypeFilter>[] = (
   emoji: VENUE_TYPE_EMOJI[id],
 }))
 
+export const VIBE_FILTER_OPTIONS: FilterOption<VibeFilter>[] = (
+  Object.keys(VIBE_LABELS) as VibeFilter[]
+).map((id) => ({
+  id,
+  label: VIBE_LABELS[id],
+  emoji: VIBE_EMOJI[id],
+}))
+
 export const PRICE_FILTER_OPTIONS: FilterOption<PriceFilter>[] = [
   { id: '$', label: '$' },
   { id: '$$', label: '$$' },
   { id: '$$$', label: '$$$' },
-]
-
-export const STATUS_FILTER_OPTIONS = [
-  { id: 'happening_now' as const, label: 'Happening now', emoji: '✨' },
-  { id: 'starting_soon' as const, label: 'Starting soon', emoji: '⏱' },
 ]

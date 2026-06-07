@@ -32,6 +32,14 @@ export function buildVenueSuggestionStoragePath(
   return `suggestions/${cityId}/${submissionId}.${menuPhotoExtension(mediaType)}`
 }
 
+export function buildEventCorrectionStoragePath(
+  eventId: string,
+  submissionId: string,
+  mediaType: MenuPhotoMediaType,
+): string {
+  return `${eventId}/${submissionId}.${menuPhotoExtension(mediaType)}`
+}
+
 export async function uploadMenuPhotoToStorage(
   supabase: SupabaseClient,
   params: {
@@ -51,6 +59,36 @@ export async function uploadMenuPhotoToStorage(
   const bytes = base64ToBytes(params.imageBase64)
 
   const { error } = await supabase.storage.from('menu-photos').upload(path, bytes, {
+    contentType: params.mediaType,
+    upsert: false,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return path
+}
+
+export async function uploadEventCorrectionPhotoToStorage(
+  supabase: SupabaseClient,
+  params: {
+    eventId: string
+    submissionId: string
+    imageBase64: string
+    mediaType: MenuPhotoMediaType
+  },
+): Promise<string> {
+  validateMenuPhotoPayload(params)
+
+  const path = buildEventCorrectionStoragePath(
+    params.eventId,
+    params.submissionId,
+    params.mediaType,
+  )
+  const bytes = base64ToBytes(params.imageBase64)
+
+  const { error } = await supabase.storage.from('event-photos').upload(path, bytes, {
     contentType: params.mediaType,
     upsert: false,
   })

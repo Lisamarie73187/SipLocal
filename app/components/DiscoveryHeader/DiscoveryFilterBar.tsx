@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Calendar, Clock, SlidersHorizontal, Sparkles, Timer, X } from 'lucide-react'
+import { Calendar, Clock, SlidersHorizontal, X } from 'lucide-react'
 
 import { ContentTypeToggle } from '@/components/ContentTypeToggle/ContentTypeToggle'
 import { FilterChip } from '@/components/FilterChip/FilterChip'
@@ -7,6 +7,7 @@ import {
   DEAL_FILTER_OPTIONS,
   PRICE_FILTER_OPTIONS,
   VENUE_TYPE_FILTER_OPTIONS,
+  VIBE_FILTER_OPTIONS,
 } from '@/components/FilterChip/filterConfig'
 import { TimePointSlider } from '@/components/TimelineFilters/TimePointSlider'
 import {
@@ -27,19 +28,10 @@ import { FilterPopoverPanel } from './FilterPopover'
 
 export interface DiscoveryFilterBarProps {
   filters: UseDiscoveryFiltersResult
-  happeningNowCount: number
-  startingSoonCount?: number
   resultCount: number
-  isLiveDay: boolean
 }
 
-export function DiscoveryFilterBar({
-  filters,
-  happeningNowCount,
-  startingSoonCount = 0,
-  resultCount,
-  isLiveDay,
-}: DiscoveryFilterBarProps) {
+export function DiscoveryFilterBar({ filters, resultCount }: DiscoveryFilterBarProps) {
   const {
     applied,
     isFiltersExpanded,
@@ -50,9 +42,9 @@ export function DiscoveryFilterBar({
     setAppliedViewDay,
     setAppliedTimeAt,
     clearAppliedTime,
-    toggleAppliedStatus,
     toggleAppliedDeal,
     toggleAppliedVenueType,
+    toggleAppliedVibe,
     toggleAppliedPriceLevel,
     setContentType,
   } = filters
@@ -65,8 +57,6 @@ export function DiscoveryFilterBar({
   const timeAnchorRef = useRef<HTMLDivElement>(null)
 
   const showHappyHourFilters = applied.contentType === 'happy_hours'
-  const happeningNowActive = applied.statusFilters.includes('happening_now')
-  const startingSoonActive = applied.statusFilters.includes('starting_soon')
 
   const dayLabel = getViewDayButtonLabel(applied.viewDay)
   const timeLabel = getTimeFilterButtonLabel(applied.timeAtMinutes)
@@ -129,47 +119,6 @@ export function DiscoveryFilterBar({
 
       <div className="discovery-filter-bar__primary">
         <div className="discovery-filter-bar__quick flex min-w-0 flex-wrap items-center gap-2">
-          {isLiveDay ? (
-            <>
-              <DiscoveryFilterButton
-                label="Happening now"
-                icon={Sparkles}
-                active={happeningNowActive}
-                onClick={() => toggleAppliedStatus('happening_now')}
-                badge={
-                  happeningNowCount > 0 ? (
-                    <span
-                      className={cn(
-                        'ml-0.5 text-sm font-bold tabular-nums',
-                        happeningNowActive ? 'text-white/95' : 'text-muted-foreground',
-                      )}
-                    >
-                      {happeningNowCount}
-                    </span>
-                  ) : null
-                }
-              />
-              <DiscoveryFilterButton
-                label="Starting soon"
-                icon={Timer}
-                active={startingSoonActive}
-                onClick={() => toggleAppliedStatus('starting_soon')}
-                badge={
-                  startingSoonCount > 0 ? (
-                    <span
-                      className={cn(
-                        'ml-0.5 text-sm font-bold tabular-nums',
-                        startingSoonActive ? 'text-white/95' : 'text-muted-foreground',
-                      )}
-                    >
-                      {startingSoonCount}
-                    </span>
-                  ) : null
-                }
-              />
-            </>
-          ) : null}
-
           <DiscoveryFilterButton
             label="Filters"
             icon={SlidersHorizontal}
@@ -313,6 +262,23 @@ export function DiscoveryFilterBar({
                     emoji={option.emoji}
                     active={applied.venueTypes.includes(option.id)}
                     onClick={() => toggleAppliedVenueType(option.id)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="text-left">
+              <p className="text-[11px] font-bold tracking-[0.12em] text-muted-foreground uppercase">
+                Vibes
+              </p>
+              <div className="mt-3 flex flex-wrap justify-start gap-2">
+                {VIBE_FILTER_OPTIONS.map((option) => (
+                  <FilterChip
+                    key={option.id}
+                    variant="pill"
+                    label={option.label}
+                    emoji={option.emoji}
+                    active={applied.vibes.includes(option.id)}
+                    onClick={() => toggleAppliedVibe(option.id)}
                   />
                 ))}
               </div>

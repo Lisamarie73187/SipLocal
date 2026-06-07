@@ -29,7 +29,8 @@ function makeEvent(overrides: Partial<EventDetail> = {}): EventDetail {
       lat: 44.05,
       lng: -121.31,
       price_level: '$$',
-      venue_type: 'brewery',
+      venue_types: ['brewery'],
+      vibes: [],
     },
     ...overrides,
   }

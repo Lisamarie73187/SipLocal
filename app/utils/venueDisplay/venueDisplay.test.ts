@@ -31,6 +31,8 @@ const baseVenue = (): VenueDetail => ({
   last_scraped_at: null,
   last_verified_at: null,
   community_verified_at: null,
+  venue_types: [],
+  vibes: [],
   scraped_city: null,
   scraped_zip: null,
   scrape_content_hash: null,
@@ -43,7 +45,7 @@ describe('getVenueDisplaySubtitle', () => {
   it('shows the scraped description when present', () => {
     const subtitle = getVenueDisplaySubtitle({
       ...baseVenue(),
-      venue_type: 'restaurant',
+      venue_types: ['restaurant'],
       description: 'Downtown brewpub with a sunny patio and local craft beers.',
     })
 
@@ -54,7 +56,7 @@ describe('getVenueDisplaySubtitle', () => {
     expect(
       getVenueDisplaySubtitle({
         ...baseVenue(),
-        venue_type: 'bar',
+        venue_types: ['bar'],
         description: null,
       }),
     ).toBe('Bar')
@@ -75,7 +77,7 @@ describe('getOwnerPreviewCardSubtitle', () => {
     expect(
       getOwnerPreviewCardSubtitle({
         ...baseVenue(),
-        venue_type: 'brewery',
+        venue_types: ['brewery'],
         description: 'Iconic Bend brewery with Northwest pub fare and house beers on tap.',
       }),
     ).toBe('Iconic Bend brewery with Northwest pub fare and house beers on tap.')
@@ -85,7 +87,7 @@ describe('getOwnerPreviewCardSubtitle', () => {
     expect(
       getOwnerPreviewCardSubtitle({
         ...baseVenue(),
-        venue_type: 'bar',
+        venue_types: ['bar'],
         description: null,
       }),
     ).toBe('Bar')

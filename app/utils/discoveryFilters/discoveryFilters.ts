@@ -1,15 +1,14 @@
-import type { DiscoveryFiltersState, PriceFilter, StatusFilter } from '@/hooks/useDiscoveryFilters'
+import type { DiscoveryFiltersState, PriceFilter } from '@/hooks/useDiscoveryFilters'
 import type { VenueDetail } from '@/types/venue'
 import {
-  getDayOfWeekInTimezone,
   getSlotsForDay,
   getVenueTimelinePlacementForViewDay,
-  isViewingToday,
   resolveViewDayForSlots,
   slotMatchesDealFilter,
   slotMatchesTimeAt,
 } from '@/utils/happyHour'
 import { venueMatchesVenueType } from '@/utils/venueType'
+import { venueMatchesVibes } from '@/utils/vibe'
 
 function venueMatchesSearch(venue: VenueDetail, query: string): boolean {
   const slotSummaries = venue.happy_hour_slots
@@ -61,35 +60,6 @@ function venueHasSlotMatchingTime(
   return daySlots.some((slot) => slotMatchesTimeAt(slot, timeAtMinutes))
 }
 
-/** When false, only venues with an active happy hour (happening now) appear — plus search matches. */
-export function discoveryFiltersExpandVisibility(filters: DiscoveryFiltersState): boolean {
-  return (
-    filters.search.trim().length > 0 ||
-    filters.viewDay !== 'any' ||
-    filters.timeAtMinutes !== null ||
-    filters.statusFilters.includes('starting_soon') ||
-    filters.deals.length > 0 ||
-    filters.venueTypes.length > 0 ||
-    filters.priceLevels.length > 0
-  )
-}
-
-export function sectionAllowedForStatusFilters(
-  sectionId: string,
-  statusFilters: StatusFilter[],
-): boolean {
-  if (statusFilters.length === 0) {
-    return true
-  }
-  if (sectionId === 'happening_now') {
-    return statusFilters.includes('happening_now')
-  }
-  if (sectionId === 'starting_soon') {
-    return statusFilters.includes('starting_soon')
-  }
-  return false
-}
-
 export function venueMatchesDiscoveryFilters(
   venue: VenueDetail,
   filters: DiscoveryFiltersState,
@@ -100,6 +70,9 @@ export function venueMatchesDiscoveryFilters(
     return false
   }
   if (!venueMatchesVenueType(venue, filters.venueTypes)) {
+    return false
+  }
+  if (!venueMatchesVibes(venue, filters.vibes)) {
     return false
   }
   if (!venueMatchesDeals(venue, filters.deals, filters.viewDay, now)) {
@@ -118,34 +91,14 @@ export function venueMatchesDiscoveryFilters(
   }
 
   const timeZone = venue.city.timezone
-  const today = getDayOfWeekInTimezone(now, timeZone)
-  const isLiveDay = isViewingToday(filters.viewDay, today)
-  const happeningNowActive = filters.statusFilters.includes('happening_now')
-  const viewDayForPlacement = happeningNowActive ? 'any' : filters.viewDay
-
   const placement = getVenueTimelinePlacementForViewDay(
     venue.happy_hour_slots,
-    viewDayForPlacement,
+    filters.viewDay,
     now,
     timeZone,
   )
-  if (!placement) {
-    return false
-  }
 
-  if (placement.sectionId === 'happening_now') {
-    return true
-  }
-
-  if (!discoveryFiltersExpandVisibility(filters)) {
-    return false
-  }
-
-  if (isLiveDay && filters.statusFilters.length > 0) {
-    return sectionAllowedForStatusFilters(placement.sectionId, filters.statusFilters)
-  }
-
-  return true
+  return placement !== null
 }
 
 export function countVenuesMatchingFilters(

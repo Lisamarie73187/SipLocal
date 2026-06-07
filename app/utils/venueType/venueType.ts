@@ -112,10 +112,14 @@ export function inferVenueType(
   return null
 }
 
-export function resolveVenueType(
-  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_type'>,
-): VenueType | null {
-  return venue.venue_type ?? inferVenueType(venue)
+export function resolveVenueTypes(
+  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_types'>,
+): VenueType[] {
+  if (venue.venue_types.length > 0) {
+    return venue.venue_types
+  }
+  const inferred = inferVenueType(venue)
+  return inferred ? [inferred] : []
 }
 
 export function getVenueTypeLabel(type: VenueType): string {
@@ -123,16 +127,16 @@ export function getVenueTypeLabel(type: VenueType): string {
 }
 
 export function venueMatchesVenueType(
-  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_type'>,
+  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_types'>,
   types: VenueTypeFilter[],
 ): boolean {
   if (types.length === 0) {
     return true
   }
 
-  const resolved = resolveVenueType(venue)
-  if (resolved) {
-    return types.includes(resolved)
+  const resolved = resolveVenueTypes(venue)
+  if (resolved.length > 0) {
+    return types.some((type) => resolved.includes(type))
   }
 
   const haystack = getVenueTypeHaystack(venue)
@@ -155,8 +159,8 @@ export function venueMatchesAmenities(
 }
 
 export function getVenueCategoryEmoji(
-  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_type'>,
+  venue: Pick<VenueDetail, 'name' | 'description' | 'venue_types'>,
 ): string {
-  const type = resolveVenueType(venue)
+  const [type] = resolveVenueTypes(venue)
   return type ? VENUE_TYPE_EMOJI[type] : DEFAULT_VENUE_EMOJI
 }

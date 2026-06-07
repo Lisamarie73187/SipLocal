@@ -155,6 +155,7 @@ export const saveAdminVenueEvents = createServerFn({ method: 'POST' })
         end_time: endTime,
         is_published: event.is_published,
         confidence,
+        source_urls: event.source_urls ?? [],
         last_verified_at: adminVerified,
       }
     })
@@ -175,6 +176,7 @@ export const saveAdminVenueEvents = createServerFn({ method: 'POST' })
             end_time: row.end_time,
             is_published: row.is_published,
             confidence: row.confidence,
+            source_urls: row.source_urls,
             ...(row.last_verified_at
               ? { last_verified_at: row.last_verified_at }
               : {}),
@@ -201,6 +203,7 @@ export const saveAdminVenueEvents = createServerFn({ method: 'POST' })
             end_time: row.end_time,
             is_published: row.is_published,
             confidence: row.confidence,
+            source_urls: row.source_urls,
             last_verified_at: row.last_verified_at,
           })
           .select('id')
@@ -293,7 +296,8 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
       is_published: venue.is_published,
       is_featured: venue.is_featured ?? false,
       place_id: venue.place_id?.trim() || null,
-      venue_type: venue.venue_type ?? null,
+      venue_types: venue.venue_types ?? [],
+      vibes: venue.vibes ?? [],
       schedule_cadence: venue.schedule_cadence ?? null,
     }
 

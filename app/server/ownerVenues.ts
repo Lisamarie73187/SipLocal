@@ -52,7 +52,7 @@ export interface OwnerVenueDetail {
   phone: string | null
   website_url: string | null
   description: string | null
-  venue_type: Database['public']['Enums']['venue_type'] | null
+  venue_types: Database['public']['Enums']['venue_type'][]
   price_level: Database['public']['Enums']['venue_price_level']
   image_url: string | null
   city_slug: string
@@ -194,7 +194,7 @@ export const getOwnerVenueBySlug = createServerFn({ method: 'GET' })
           phone,
           website_url,
           description,
-          venue_type,
+          venue_types,
           price_level,
           image_url,
           lat,
@@ -256,7 +256,7 @@ export const getOwnerVenueBySlug = createServerFn({ method: 'GET' })
           phone: venueRow.phone,
           website_url: venueRow.website_url,
           description: venueRow.description,
-          venue_type: venueRow.venue_type,
+          venue_types: venueRow.venue_types,
           price_level: venueRow.price_level,
           image_url: venueRow.image_url,
           city_slug: city.slug,
@@ -267,7 +267,7 @@ export const getOwnerVenueBySlug = createServerFn({ method: 'GET' })
           previewSubtitle: getOwnerPreviewCardSubtitle({
             description: venueRow.description,
             name: venueRow.name,
-            venue_type: venueRow.venue_type,
+            venue_types: venueRow.venue_types,
           }),
         },
         slots,

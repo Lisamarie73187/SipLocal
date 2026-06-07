@@ -56,6 +56,8 @@ const venue = (slots: HappyHourSlot[]): VenueDetail => ({
   last_scraped_at: null,
   last_verified_at: null,
   community_verified_at: null,
+  venue_types: [],
+  vibes: [],
   scraped_city: null,
   scraped_zip: null,
   scrape_content_hash: null,
@@ -109,7 +111,7 @@ describe('discoveryFilters default visibility', () => {
     expect(matches).toBe(true)
   })
 
-  it('excludes later-tonight venues when only live status filters are on', () => {
+  it('includes later-tonight venues by default (no status filtering)', () => {
     const testVenue = venue([slot({ day_of_week: 1, start_time: '21:30', end_time: '23:00' })])
     const placement = getVenueTimelinePlacement(
       testVenue.happy_hour_slots,
@@ -119,17 +121,13 @@ describe('discoveryFilters default visibility', () => {
     expect(placement?.sectionId).toBe('later_tonight')
 
     const matches = venueMatchesDiscoveryFilters(testVenue, DEFAULT_FILTERS, mondaySevenPm)
-    expect(matches).toBe(false)
+    expect(matches).toBe(true)
   })
 
-  it('includes starting-soon venues when that status filter is on', () => {
-    const testVenue = venue([slot({ day_of_week: 1, start_time: '19:30', end_time: '21:00' })])
-    const matches = venueMatchesDiscoveryFilters(
-      testVenue,
-      { ...DEFAULT_FILTERS, statusFilters: ['starting_soon'] },
-      mondaySevenPm,
-    )
-    expect(matches).toBe(true)
+  it('excludes venues with no happy hour placement for the viewed day', () => {
+    const testVenue = venue([slot({ day_of_week: 2, start_time: '16:00', end_time: '18:00' })])
+    const matches = venueMatchesDiscoveryFilters(testVenue, DEFAULT_FILTERS, mondaySevenPm)
+    expect(matches).toBe(false)
   })
 })
 

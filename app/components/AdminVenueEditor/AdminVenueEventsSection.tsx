@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Copy, Loader2, Plus, Trash2 } from 'lucide-react'
+import { Copy, Link2, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { EventScrubPanel } from '@/components/EventScrubPanel'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import { saveAdminVenueEvents } from '@/server/adminVenues'
+import { scrubEventsFromUrl } from '@/server/adminEventScrub'
 import type { AdminVenueEditorEvent } from '@/server/adminVenues'
+import type { ParsedEvent } from '@/lib/scrape/parseEventsWithAnthropic'
 import type { EventType } from '@/types/event'
 import type { DayOfWeek, ScrapeConfidence } from '@/types/venue'
 import { getDayName } from '@/utils/happyHour'
@@ -73,6 +76,24 @@ function newEmptyEvent(): EventFormState {
   }
 }
 
+function scrubbedEventToFormState(event: ParsedEvent, sourceUrl: string | null): EventFormState {
+  return {
+    key: `event-${crypto.randomUUID()}`,
+    id: null,
+    title: event.title,
+    description: event.description ?? '',
+    event_type: event.event_type,
+    schedule_mode: event.schedule_mode,
+    event_date: event.event_date ?? '',
+    day_of_week: (event.day_of_week ?? 4) as DayOfWeek,
+    start_time: event.start_time,
+    end_time: event.end_time ?? '',
+    is_published: false,
+    confidence: 'low',
+    source_urls: sourceUrl ? [sourceUrl] : [],
+  }
+}
+
 function duplicateEvent(event: EventFormState): EventFormState {
   return {
     ...event,
@@ -82,12 +103,39 @@ function duplicateEvent(event: EventFormState): EventFormState {
   }
 }
 
+export interface DraftEventInput {
+  key: string
+  title: string
+  description: string
+  sourceUrl: string | null
+}
+
 interface AdminVenueEventsSectionProps {
   venueId: string
   cityId: string
   cityTimezone: string
   initialEvents: AdminVenueEditorEvent[]
   onReload: () => Promise<void>
+  draftEvent?: DraftEventInput | null
+  onDraftConsumed?: () => void
+}
+
+function draftEventToFormState(draft: DraftEventInput): EventFormState {
+  return {
+    key: `event-${crypto.randomUUID()}`,
+    id: null,
+    title: draft.title,
+    description: draft.description,
+    event_type: 'other',
+    schedule_mode: 'dated',
+    event_date: '',
+    day_of_week: 4,
+    start_time: '19:00',
+    end_time: '',
+    is_published: false,
+    confidence: null,
+    source_urls: draft.sourceUrl ? [draft.sourceUrl] : [],
+  }
 }
 
 export function AdminVenueEventsSection({
@@ -96,15 +144,55 @@ export function AdminVenueEventsSection({
   cityTimezone,
   initialEvents,
   onReload,
+  draftEvent,
+  onDraftConsumed,
 }: AdminVenueEventsSectionProps) {
   const [events, setEvents] = useState<EventFormState[]>(() => eventsToFormState(initialEvents))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
+  const [scrubbingKey, setScrubbingKey] = useState<string | null>(null)
+  const [scrubError, setScrubError] = useState<string | null>(null)
 
   useEffect(() => {
     setEvents(eventsToFormState(initialEvents))
   }, [initialEvents])
+
+  useEffect(() => {
+    if (!draftEvent) {
+      return
+    }
+    setEvents((current) => [...current, draftEventToFormState(draftEvent)])
+    onDraftConsumed?.()
+  }, [draftEvent, onDraftConsumed])
+
+  const handleScrubFromEventLink = async (event: EventFormState): Promise<void> => {
+    const sourceUrl = event.source_urls[0]?.trim()
+    if (!sourceUrl) {
+      return
+    }
+
+    setScrubbingKey(event.key)
+    setScrubError(null)
+    setSavedNotice(null)
+
+    try {
+      const result = await scrubEventsFromUrl({ data: { sourceUrl } })
+      if (result.events.length === 0) {
+        throw new Error(result.warnings[0] ?? 'No events found at that link.')
+      }
+      setEvents((current) => [
+        ...current,
+        ...result.events.map((found) => scrubbedEventToFormState(found, result.sourceUrl)),
+      ])
+    } catch (scrubFailure) {
+      setScrubError(
+        scrubFailure instanceof Error ? scrubFailure.message : 'Could not scrub that link.',
+      )
+    } finally {
+      setScrubbingKey(null)
+    }
+  }
 
   const handleSave = async (): Promise<void> => {
     setSaving(true)
@@ -139,6 +227,7 @@ export function AdminVenueEventsSection({
             end_time: event.end_time.trim() || undefined,
             is_published: event.is_published,
             confidence: event.confidence,
+            source_urls: event.source_urls,
           })),
         },
       })
@@ -170,6 +259,15 @@ export function AdminVenueEventsSection({
           Add event
         </Button>
       </div>
+
+      <EventScrubPanel
+        onAdd={(scrubbed, sourceUrl) => {
+          setEvents((current) => [
+            ...current,
+            ...scrubbed.map((event) => scrubbedEventToFormState(event, sourceUrl)),
+          ])
+        }}
+      />
 
       {events.length === 0 ? (
         <p className="text-sm text-muted-foreground">
@@ -410,8 +508,47 @@ export function AdminVenueEventsSection({
                 </select>
               </label>
 
+              <label className="block space-y-2">
+                <span className={labelClassName}>Source URL (optional)</span>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={event.source_urls[0] ?? ''}
+                    onChange={(change) => {
+                      const value = change.target.value
+                      setEvents((current) =>
+                        current.map((row) =>
+                          row.key === event.key
+                            ? {
+                                ...row,
+                                source_urls: value.trim() ? [value.trim(), ...row.source_urls.slice(1)] : row.source_urls.slice(1),
+                              }
+                            : row,
+                        ),
+                      )
+                    }}
+                    className={inputClassName}
+                    placeholder="https://venue.com/events"
+                    inputMode="url"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-11 shrink-0"
+                    disabled={scrubbingKey !== null || !event.source_urls[0]?.trim()}
+                    onClick={() => void handleScrubFromEventLink(event)}
+                  >
+                    {scrubbingKey === event.key ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Link2 className="size-4" />
+                    )}
+                    Scrub this link
+                  </Button>
+                </div>
+              </label>
+
               {event.source_urls.length > 0 ? (
-                <VenueSourceLinks sourceUrls={event.source_urls} />
+                <VenueSourceLinks sourceUrls={event.source_urls} websiteUrl={null} />
               ) : null}
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -484,6 +621,12 @@ export function AdminVenueEventsSection({
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
+        </p>
+      ) : null}
+
+      {scrubError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {scrubError}
         </p>
       ) : null}
     </section>

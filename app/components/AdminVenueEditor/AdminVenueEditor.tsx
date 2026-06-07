@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Copy, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { HappyHourMenuPhotoPanel } from '@/components/HappyHourMenuPhotoPanel/HappyHourMenuPhotoPanel'
 import { HappyHourPastePanel } from '@/components/HappyHourPastePanel/HappyHourPastePanel'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import {
@@ -11,6 +12,7 @@ import {
   setVenueScheduleCadence,
 } from '@/server/adminDiscover'
 import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
+import { parseHappyHourMenuPhotoAdmin } from '@/server/menuPhotoSubmissions'
 import type { AdminVenueEditorSlot } from '@/server/adminVenues'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
@@ -27,12 +29,14 @@ import {
   SCRAPE_CONFIDENCE_ADMIN_OPTIONS,
 } from '@/utils/venueTrust'
 import { VENUE_TYPE_ADMIN_OPTIONS } from '@/utils/venueType'
+import { VIBE_ADMIN_OPTIONS } from '@/utils/vibe'
 import { buildAdminVenuesListSearch } from '@/utils/adminVenuesListSearch'
 import { cn } from '@/utils'
 
-import { AdminVenueEventsSection } from './AdminVenueEventsSection'
+import { AdminVenueEventsSection, type DraftEventInput } from './AdminVenueEventsSection'
 import { AdminVenueManagersSection } from '@/components/AdminVenueManagersSection/AdminVenueManagersSection'
 import { AdminMenuSubmissionsPanel } from '@/components/AdminMenuSubmissionsPanel/AdminMenuSubmissionsPanel'
+import { AdminEventSubmissionsPanel } from '@/components/AdminEventSubmissionsPanel/AdminEventSubmissionsPanel'
 import type { AdminVenueEditorProps, SlotFormState, VenueFormState } from './AdminVenueEditor.types'
 
 const inputClassName =
@@ -53,7 +57,8 @@ function venueToFormState(
     website_url: venue.website_url ?? '',
     description: venue.description ?? '',
     place_id: venue.place_id ?? '',
-    venue_type: venue.venue_type ?? '',
+    venue_types: venue.venue_types ?? [],
+    vibes: venue.vibes ?? [],
     last_verified_at: venue.last_verified_at ?? '',
     community_verified_at: venue.community_verified_at ?? '',
     last_scraped_at: venue.last_scraped_at ?? '',
@@ -145,6 +150,7 @@ export function AdminVenueEditor({
   const [confidenceSaving, setConfidenceSaving] = useState(false)
   const [communitySaving, setCommunitySaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pendingDraftEvent, setPendingDraftEvent] = useState<DraftEventInput | null>(null)
   const [autoSlug, setAutoSlug] = useState(mode === 'create')
   const editorTrustConfidence = useMemo(() => rollupSlotConfidence(slots), [slots])
   const editorSourceUrls = useMemo(
@@ -265,7 +271,8 @@ export function AdminVenueEditor({
             is_published: venue.is_published,
             is_featured: venue.is_featured,
             place_id: venue.place_id || null,
-            venue_type: venue.venue_type || null,
+            venue_types: venue.venue_types,
+            vibes: venue.vibes,
             schedule_cadence: venue.schedule_cadence || null,
           },
           slots: cleanedSlots,
@@ -503,26 +510,33 @@ export function AdminVenueEditor({
           />
         </label>
 
+        <div className="space-y-2">
+          <span className={labelClassName}>Venue type</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {VENUE_TYPE_ADMIN_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={venue.venue_types.includes(option.value)}
+                  onChange={(event) =>
+                    updateVenue({
+                      venue_types: event.target.checked
+                        ? [...venue.venue_types, option.value]
+                        : venue.venue_types.filter((type) => type !== option.value),
+                    })
+                  }
+                  className="size-5 shrink-0 rounded border-border"
+                />
+                <span className="text-sm text-dark">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block space-y-2">
-            <span className={labelClassName}>Venue type</span>
-            <select
-              value={venue.venue_type}
-              onChange={(event) =>
-                updateVenue({
-                  venue_type: event.target.value as VenueFormState['venue_type'],
-                })
-              }
-              className={inputClassName}
-            >
-              <option value="">Not set</option>
-              {VENUE_TYPE_ADMIN_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
           <label className="block space-y-2">
             <span className={labelClassName}>Price level</span>
             <select
@@ -539,6 +553,32 @@ export function AdminVenueEditor({
               <option value="$$$">$$$</option>
             </select>
           </label>
+        </div>
+
+        <div className="space-y-2">
+          <span className={labelClassName}>Vibes</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {VIBE_ADMIN_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={venue.vibes.includes(option.value)}
+                  onChange={(event) =>
+                    updateVenue({
+                      vibes: event.target.checked
+                        ? [...venue.vibes, option.value]
+                        : venue.vibes.filter((vibe) => vibe !== option.value),
+                    })
+                  }
+                  className="size-5 shrink-0 rounded border-border"
+                />
+                <span className="text-sm text-dark">{option.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -735,6 +775,32 @@ export function AdminVenueEditor({
             setError(null)
           }}
         />
+
+        {venue.id ? (
+          <HappyHourMenuPhotoPanel
+            flow="manager"
+            applyLabel="Apply to slots"
+            appendModeLabel="Add more"
+            saving={saving}
+            parseMenuPhoto={(payload) =>
+              parseHappyHourMenuPhotoAdmin({
+                data: {
+                  venueId: venue.id,
+                  imageBase64: payload.imageBase64,
+                  mediaType: payload.mediaType,
+                },
+              })
+            }
+            onApply={(result, mode) => {
+              if (result.slots.length === 0) {
+                throw new Error(result.warnings[0] ?? 'Could not parse any happy hour slots.')
+              }
+              const nextSlots = parsedSlotsToFormState(result.slots)
+              setSlots((current) => (mode === 'replace' ? nextSlots : [...current, ...nextSlots]))
+              setError(null)
+            }}
+          />
+        ) : null}
 
         {mode === 'edit' && venue.id ? (
           <AdminMenuSubmissionsPanel venueId={venue.id} onApproved={reloadSlotsFromServer} />
@@ -1127,6 +1193,22 @@ export function AdminVenueEditor({
           cityTimezone={cityTimezone}
           initialEvents={initialEvents}
           onReload={onEventsReload ?? (async () => {})}
+          draftEvent={pendingDraftEvent}
+          onDraftConsumed={() => setPendingDraftEvent(null)}
+        />
+      ) : null}
+
+      {mode === 'edit' && venue.id ? (
+        <AdminEventSubmissionsPanel
+          venueId={venue.id}
+          onApprove={(submission) =>
+            setPendingDraftEvent({
+              key: submission.id,
+              title: submission.title,
+              description: submission.description ?? '',
+              sourceUrl: null,
+            })
+          }
         />
       ) : null}
 

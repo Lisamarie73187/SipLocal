@@ -12,7 +12,8 @@ export interface EventVenueSummary {
   lat: number
   lng: number
   price_level: Database['public']['Enums']['venue_price_level']
-  venue_type: Database['public']['Enums']['venue_type'] | null
+  venue_types: Database['public']['Enums']['venue_type'][]
+  vibes: Database['public']['Enums']['venue_vibe'][]
   website_url: string | null
   last_verified_at: string | null
   community_verified_at: string | null

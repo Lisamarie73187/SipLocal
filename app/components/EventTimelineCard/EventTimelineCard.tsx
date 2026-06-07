@@ -23,7 +23,7 @@ export function EventTimelineCard({
   onHover,
   onHoverEnd,
 }: EventTimelineCardProps) {
-  const { event, badgeTone, badgeLabel } = entry
+  const { event, badgeTone, badgeLabel, distanceLabel } = entry
   const isOpenNow = badgeTone === 'open'
   const showScheduleBadge = !isOpenNow && badgeLabel
   const dateLabel = formatEventDateLabel(event)
@@ -84,6 +84,9 @@ export function EventTimelineCard({
         <span className="inline-flex items-center gap-1">
           <MapPin className="size-3.5 shrink-0" aria-hidden />
           {event.venue.address_line1}
+          {distanceLabel && distanceLabel !== '—' ? (
+            <span className="text-muted-foreground">· {distanceLabel}</span>
+          ) : null}
         </span>
         <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-dark">
           {getEventTypeLabel(event.event_type)}

@@ -24,7 +24,8 @@ export interface VenueFormState {
   is_published: boolean
   is_featured: boolean
   place_id: string
-  venue_type: Database['public']['Enums']['venue_type'] | ''
+  venue_types: Database['public']['Enums']['venue_type'][]
+  vibes: Database['public']['Enums']['venue_vibe'][]
   last_verified_at: string
   community_verified_at: string
   last_scraped_at: string

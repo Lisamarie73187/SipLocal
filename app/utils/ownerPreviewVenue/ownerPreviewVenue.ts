@@ -195,7 +195,8 @@ export function buildOwnerPreviewVenue(
     is_published: false,
     is_featured: false,
     data_status: 'pending_review',
-    venue_type: venue.venue_type,
+    venue_types: venue.venue_types,
+    vibes: [],
     created_at: PREVIEW_TIMESTAMP,
     updated_at: PREVIEW_TIMESTAMP,
     city: {

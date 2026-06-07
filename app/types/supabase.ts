@@ -81,6 +81,59 @@ export type Database = {
         }
         Relationships: []
       }
+      event_submissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          photo_storage_path: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["event_submission_status"]
+          title: string
+          updated_at: string
+          user_id: string
+          venue_id: string | null
+          venue_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_storage_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["event_submission_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+          venue_id?: string | null
+          venue_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          photo_storage_path?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["event_submission_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          venue_id?: string | null
+          venue_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_submissions_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           city_id: string
@@ -714,7 +767,8 @@ export type Database = {
           scraped_zip: string | null
           slug: string
           updated_at: string
-          venue_type: Database["public"]["Enums"]["venue_type"] | null
+          venue_types: Database["public"]["Enums"]["venue_type"][]
+          vibes: Database["public"]["Enums"]["venue_vibe"][]
           website_url: string | null
           yelp_id: string | null
           yelp_rating: number | null
@@ -752,7 +806,8 @@ export type Database = {
           scraped_zip?: string | null
           slug: string
           updated_at?: string
-          venue_type?: Database["public"]["Enums"]["venue_type"] | null
+          venue_types?: Database["public"]["Enums"]["venue_type"][]
+          vibes?: Database["public"]["Enums"]["venue_vibe"][]
           website_url?: string | null
           yelp_id?: string | null
           yelp_rating?: number | null
@@ -790,7 +845,8 @@ export type Database = {
           scraped_zip?: string | null
           slug?: string
           updated_at?: string
-          venue_type?: Database["public"]["Enums"]["venue_type"] | null
+          venue_types?: Database["public"]["Enums"]["venue_type"][]
+          vibes?: Database["public"]["Enums"]["venue_vibe"][]
           website_url?: string | null
           yelp_id?: string | null
           yelp_rating?: number | null
@@ -817,7 +873,16 @@ export type Database = {
     }
     Enums: {
       deal_category: "drinks" | "food" | "both" | "other"
-      event_type: "trivia" | "live_music" | "special" | "other"
+      event_submission_status: "pending_review" | "approved" | "rejected"
+      event_type:
+        | "trivia"
+        | "live_music"
+        | "special"
+        | "other"
+        | "game_night"
+        | "comedy"
+        | "sports"
+        | "nightlife"
       happy_hour_data_status: "live" | "pending_review" | "flagged"
       menu_submission_source: "crowd" | "manager"
       menu_submission_status: "pending_review" | "approved" | "rejected"
@@ -847,6 +912,14 @@ export type Database = {
         | "sports_bar"
         | "pub"
         | "distillery"
+      venue_vibe:
+        | "upscale"
+        | "rooftop"
+        | "patio"
+        | "sports_viewing"
+        | "group_friendly"
+        | "family_friendly"
+        | "dog_friendly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -978,7 +1051,17 @@ export const Constants = {
   public: {
     Enums: {
       deal_category: ["drinks", "food", "both", "other"],
-      event_type: ["trivia", "live_music", "special", "other"],
+      event_submission_status: ["pending_review", "approved", "rejected"],
+      event_type: [
+        "trivia",
+        "live_music",
+        "special",
+        "other",
+        "game_night",
+        "comedy",
+        "sports",
+        "nightlife",
+      ],
       happy_hour_data_status: ["live", "pending_review", "flagged"],
       menu_submission_source: ["crowd", "manager"],
       menu_submission_status: ["pending_review", "approved", "rejected"],
@@ -1009,6 +1092,15 @@ export const Constants = {
         "sports_bar",
         "pub",
         "distillery",
+      ],
+      venue_vibe: [
+        "upscale",
+        "rooftop",
+        "patio",
+        "sports_viewing",
+        "group_friendly",
+        "family_friendly",
+        "dog_friendly",
       ],
     },
   },

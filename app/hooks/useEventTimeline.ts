@@ -33,8 +33,6 @@ export interface UseEventTimelineOptions {
 
 export interface UseEventTimelineResult {
   sections: EventTimelineSection[]
-  happeningNowCount: number
-  startingSoonCount: number
   nowLabel: string
   isLiveDay: boolean
   filteredEvents: EventDetail[]
@@ -103,17 +101,6 @@ export function useEventTimeline(options: UseEventTimelineOptions): UseEventTime
         continue
       }
 
-      if (
-        isLiveDay &&
-        filters.statusFilters.length > 0 &&
-        ((placement.sectionId === 'happening_now' &&
-          !filters.statusFilters.includes('happening_now')) ||
-          (placement.sectionId === 'starting_soon' &&
-            !filters.statusFilters.includes('starting_soon')))
-      ) {
-        continue
-      }
-
       const entry: TimelineEventEntry = {
         event,
         distanceLabel,
@@ -162,26 +149,8 @@ export function useEventTimeline(options: UseEventTimelineOptions): UseEventTime
     return sorted
   }, [filteredEvents, filters, now, origin, isLiveDay, searchQuery, timeZone])
 
-  const happeningNowCount = useMemo(
-    () =>
-      isLiveDay
-        ? (sections.find((section) => section.id === 'happening_now')?.entries.length ?? 0)
-        : 0,
-    [sections, isLiveDay],
-  )
-
-  const startingSoonCount = useMemo(
-    () =>
-      isLiveDay
-        ? (sections.find((section) => section.id === 'starting_soon')?.entries.length ?? 0)
-        : 0,
-    [sections, isLiveDay],
-  )
-
   return {
     sections,
-    happeningNowCount,
-    startingSoonCount,
     nowLabel,
     isLiveDay,
     filteredEvents,

@@ -13,10 +13,7 @@ import { DiscoveryFilterBar } from './DiscoveryFilterBar'
 export interface DiscoveryHeaderProps {
   cityName: string
   filters: UseDiscoveryFiltersResult
-  happeningNowCount: number
-  startingSoonCount: number
   resultCount: number
-  isLiveDay: boolean
   onUseMyLocation?: () => void
   useMyLocationLoading?: boolean
   useMyLocationActive?: boolean
@@ -26,10 +23,7 @@ export interface DiscoveryHeaderProps {
 export function DiscoveryHeader({
   cityName,
   filters,
-  happeningNowCount,
-  startingSoonCount,
   resultCount,
-  isLiveDay,
   onUseMyLocation,
   useMyLocationLoading = false,
   useMyLocationActive = false,
@@ -117,13 +111,7 @@ export function DiscoveryHeader({
         </div>
 
         <div className="discovery-header__filters pt-3">
-          <DiscoveryFilterBar
-            filters={filters}
-            happeningNowCount={happeningNowCount}
-            startingSoonCount={startingSoonCount}
-            resultCount={resultCount}
-            isLiveDay={isLiveDay}
-          />
+          <DiscoveryFilterBar filters={filters} resultCount={resultCount} />
         </div>
       </div>
     </header>

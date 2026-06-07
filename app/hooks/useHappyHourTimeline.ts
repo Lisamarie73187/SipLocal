@@ -11,10 +11,7 @@ import {
   getVenueTimelinePlacementForViewDay,
   isViewingToday,
 } from '@/utils/happyHour'
-import {
-  sectionAllowedForStatusFilters,
-  venueMatchesDiscoveryFilters,
-} from '@/utils/discoveryFilters'
+import { venueMatchesDiscoveryFilters } from '@/utils/discoveryFilters'
 
 export interface TimelineVenueEntry {
   venue: VenueDetail
@@ -42,8 +39,6 @@ export interface UseHappyHourTimelineOptions {
 
 export interface UseHappyHourTimelineResult {
   sections: TimelineSection[]
-  happeningNowCount: number
-  startingSoonCount: number
   nowLabel: string
   viewDayLabel: string
   isLiveDay: boolean
@@ -135,13 +130,6 @@ export function useHappyHourTimeline(
         continue
       }
 
-      if (
-        isLiveDay &&
-        !sectionAllowedForStatusFilters(placement.sectionId, filters.statusFilters)
-      ) {
-        continue
-      }
-
       const entry: TimelineVenueEntry = {
         venue,
         distanceLabel,
@@ -191,21 +179,5 @@ export function useHappyHourTimeline(
     return sorted
   }, [filteredVenues, filters, now, origin, isLiveDay, searchQuery])
 
-  const happeningNowCount = useMemo(
-    () =>
-      isLiveDay
-        ? (sections.find((section) => section.id === 'happening_now')?.entries.length ?? 0)
-        : 0,
-    [sections, isLiveDay],
-  )
-
-  const startingSoonCount = useMemo(
-    () =>
-      isLiveDay
-        ? (sections.find((section) => section.id === 'starting_soon')?.entries.length ?? 0)
-        : 0,
-    [sections, isLiveDay],
-  )
-
-  return { sections, happeningNowCount, startingSoonCount, nowLabel, viewDayLabel, isLiveDay, filteredVenues }
+  return { sections, nowLabel, viewDayLabel, isLiveDay, filteredVenues }
 }

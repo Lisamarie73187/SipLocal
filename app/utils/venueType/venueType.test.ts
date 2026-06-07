@@ -17,6 +17,7 @@ describe('venueType', () => {
       getVenueCategoryEmoji({
         name: 'Bar Río',
         description: 'Tequila and tacos',
+        venue_types: [],
       }),
     ).toBe('🍸')
   })

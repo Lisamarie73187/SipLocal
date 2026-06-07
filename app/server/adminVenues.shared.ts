@@ -68,20 +68,34 @@ const venueInputSchema = z.object({
   is_published: z.boolean(),
   is_featured: z.boolean().optional(),
   place_id: z.string().nullable().optional(),
-  venue_type: z
-    .enum([
-      'bar',
-      'brewery',
-      'taproom',
-      'restaurant',
-      'gastropub',
-      'wine_bar',
-      'cocktail_bar',
-      'sports_bar',
-      'pub',
-      'distillery',
-    ])
-    .nullable()
+  venue_types: z
+    .array(
+      z.enum([
+        'bar',
+        'brewery',
+        'taproom',
+        'restaurant',
+        'gastropub',
+        'wine_bar',
+        'cocktail_bar',
+        'sports_bar',
+        'pub',
+        'distillery',
+      ]),
+    )
+    .optional(),
+  vibes: z
+    .array(
+      z.enum([
+        'upscale',
+        'rooftop',
+        'patio',
+        'sports_viewing',
+        'group_friendly',
+        'family_friendly',
+        'dog_friendly',
+      ]),
+    )
     .optional(),
 })
 
@@ -95,7 +109,16 @@ const eventInputSchema = z
     id: z.string().uuid().optional(),
     title: z.string().min(1).max(200),
     description: z.string().max(500).nullable().optional(),
-    event_type: z.enum(['trivia', 'live_music', 'special', 'other']),
+    event_type: z.enum([
+      'trivia',
+      'live_music',
+      'special',
+      'other',
+      'game_night',
+      'comedy',
+      'sports',
+      'nightlife',
+    ]),
     event_date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -105,6 +128,7 @@ const eventInputSchema = z
     end_time: timeSchema.optional(),
     is_published: z.boolean(),
     confidence: z.enum(['high', 'medium', 'low']).nullable().optional(),
+    source_urls: z.array(z.string().url()).optional(),
   })
   .refine((event) => Boolean(event.event_date) || event.day_of_week != null, {
     message: 'Event needs a date or day of week',

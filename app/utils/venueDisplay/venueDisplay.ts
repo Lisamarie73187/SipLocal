@@ -1,5 +1,5 @@
 import type { VenueDetail } from '@/types/venue'
-import { getVenueTypeLabel, resolveVenueType } from '@/utils/venueType'
+import { getVenueTypeLabel, resolveVenueTypes } from '@/utils/venueType'
 
 /** Subtitle under the venue name in discovery UI (map panel, timeline). */
 export function getVenueDisplaySubtitle(venue: VenueDetail): string {
@@ -8,7 +8,7 @@ export function getVenueDisplaySubtitle(venue: VenueDetail): string {
     return description
   }
 
-  const type = resolveVenueType(venue)
+  const [type] = resolveVenueTypes(venue)
   if (type) {
     return getVenueTypeLabel(type)
   }
@@ -24,7 +24,7 @@ export function getStoredVenueDescription(description: string | null | undefined
 
 /** Subtitle for owner live-preview cards — same logic as the public map. */
 export function getOwnerPreviewCardSubtitle(
-  venue: Pick<VenueDetail, 'description' | 'name' | 'venue_type'>,
+  venue: Pick<VenueDetail, 'description' | 'name' | 'venue_types'>,
 ): string {
   return getVenueDisplaySubtitle(venue as VenueDetail)
 }
