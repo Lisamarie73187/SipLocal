@@ -2,8 +2,15 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { Loader2, Pencil } from 'lucide-react'
 
+import { AdminEventSubmissionReviewCard } from '@/components/AdminEventSubmissionReviewCard/AdminEventSubmissionReviewCard'
 import { AdminMenuSubmissionReviewCard } from '@/components/AdminMenuSubmissionReviewCard/AdminMenuSubmissionReviewCard'
 import { AdminVenueSuggestionReviewCard } from '@/components/AdminVenueSuggestionReviewCard/AdminVenueSuggestionReviewCard'
+import {
+  approveVenueEventSubmission,
+  listPendingEventSubmissions,
+  rejectVenueEventSubmission,
+  type AdminPendingEventSubmissionItem,
+} from '@/server/eventSubmissions'
 import {
   approveVenueMenuSubmission,
   listPendingCustomerMenuSubmissions,
@@ -104,6 +111,7 @@ export function AdminPendingUpdatesPanel({
   const [customerSubmissions, setCustomerSubmissions] = useState<AdminCustomerMenuSubmissionItem[]>(
     [],
   )
+  const [eventSubmissions, setEventSubmissions] = useState<AdminPendingEventSubmissionItem[]>([])
   const [venueSuggestions, setVenueSuggestions] = useState<AdminVenueSuggestionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -113,14 +121,16 @@ export function AdminPendingUpdatesPanel({
   const loadUpdates = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
-      const [result, submissions, suggestions] = await Promise.all([
+      const [result, submissions, eventSubs, suggestions] = await Promise.all([
         listPendingVenueUpdates({ data: { citySlug, limit: 15 } }),
         listPendingCustomerMenuSubmissions({ data: { citySlug, limit: 20 } }),
+        listPendingEventSubmissions({ data: { citySlug, limit: 20 } }),
         listPendingVenueSuggestions({ data: { citySlug, limit: 20 } }),
       ])
       setManagerUpdates(result.managerUpdates)
       setStaffReview(result.staffReview)
       setCustomerSubmissions(submissions)
+      setEventSubmissions(eventSubs)
       setVenueSuggestions(suggestions)
       setError(null)
     } catch (loadError) {
@@ -128,6 +138,7 @@ export function AdminPendingUpdatesPanel({
       setManagerUpdates([])
       setStaffReview([])
       setCustomerSubmissions([])
+      setEventSubmissions([])
       setVenueSuggestions([])
     } finally {
       setLoading(false)
@@ -172,8 +183,30 @@ export function AdminPendingUpdatesPanel({
       })
   }
 
+  const reviewEventSubmission = (submissionId: string, action: 'approve' | 'reject'): void => {
+    setReviewingId(submissionId)
+    setFeedback(null)
+
+    const request =
+      action === 'approve'
+        ? approveVenueEventSubmission({ data: { submissionId } })
+        : rejectVenueEventSubmission({ data: { submissionId } })
+
+    void request
+      .then((result) => {
+        setFeedback(result.message)
+        return loadUpdates()
+      })
+      .catch((reviewError) => {
+        setError(reviewError instanceof Error ? reviewError.message : 'Review failed')
+      })
+      .finally(() => {
+        setReviewingId(null)
+      })
+  }
+
   const venueUpdateCount = managerUpdates.length + staffReview.length
-  const customerCount = customerSubmissions.length
+  const customerCount = customerSubmissions.length + eventSubmissions.length
   const suggestionCount = venueSuggestions.length
 
   const parseVenueSuggestion = (submissionId: string): void => {
@@ -354,23 +387,59 @@ export function AdminPendingUpdatesPanel({
         )
       ) : activeTab === 'customer_submissions' ? (
         customerCount === 0 ? (
-          <p className="text-sm text-muted-foreground">No customer menu photos waiting for review.</p>
+          <p className="text-sm text-muted-foreground">
+            No customer menu photos or events waiting for review.
+          </p>
         ) : (
-          <ul className="space-y-4">
-            {customerSubmissions.map((submission) => (
-              <AdminMenuSubmissionReviewCard
-                key={submission.id}
-                submission={submission}
-                showVenue
-                reviewingId={reviewingId}
-                onApprove={(submissionId, options) =>
-                  reviewCustomerSubmission(submissionId, 'approve', options)
-                }
-                onReject={(submissionId) => reviewCustomerSubmission(submissionId, 'reject')}
-                onParse={(submissionId) => reviewCustomerSubmission(submissionId, 'parse')}
-              />
-            ))}
-          </ul>
+          <div className="space-y-6">
+            {customerSubmissions.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="font-heading text-sm font-semibold text-dark">
+                  Menu photos
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    ({customerSubmissions.length})
+                  </span>
+                </h3>
+                <ul className="space-y-4">
+                  {customerSubmissions.map((submission) => (
+                    <AdminMenuSubmissionReviewCard
+                      key={submission.id}
+                      submission={submission}
+                      showVenue
+                      reviewingId={reviewingId}
+                      onApprove={(submissionId, options) =>
+                        reviewCustomerSubmission(submissionId, 'approve', options)
+                      }
+                      onReject={(submissionId) => reviewCustomerSubmission(submissionId, 'reject')}
+                      onParse={(submissionId) => reviewCustomerSubmission(submissionId, 'parse')}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {eventSubmissions.length > 0 ? (
+              <div className="space-y-3 border-t border-border/60 pt-6">
+                <h3 className="font-heading text-sm font-semibold text-dark">
+                  Events
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    ({eventSubmissions.length})
+                  </span>
+                </h3>
+                <ul className="space-y-4">
+                  {eventSubmissions.map((submission) => (
+                    <AdminEventSubmissionReviewCard
+                      key={submission.id}
+                      submission={submission}
+                      reviewingId={reviewingId}
+                      onApprove={(submissionId) => reviewEventSubmission(submissionId, 'approve')}
+                      onReject={(submissionId) => reviewEventSubmission(submissionId, 'reject')}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
         )
       ) : suggestionCount === 0 ? (
         <p className="text-sm text-muted-foreground">No missing-venue suggestions waiting for review.</p>

@@ -73,6 +73,115 @@ export const listVenueEventSubmissionsForAdmin = createServerFn({ method: 'GET' 
     return items
   })
 
+export interface AdminPendingEventSubmissionItem extends AdminEventSubmissionListItem {
+  venue_id: string | null
+  venue_name: string
+  venue_slug: string | null
+  address_line1: string | null
+}
+
+export const listPendingEventSubmissions = createServerFn({ method: 'GET' })
+  .inputValidator(
+    z.object({
+      citySlug: z.string().optional(),
+      limit: z.number().int().min(1).max(50).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<AdminPendingEventSubmissionItem[]> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAdminError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const limit = data.limit ?? 20
+
+    let cityId: string | null = null
+    if (data.citySlug) {
+      const { data: city, error: cityError } = await supabase
+        .from('cities')
+        .select('id')
+        .eq('slug', data.citySlug)
+        .maybeSingle()
+
+      if (cityError) {
+        throw cityError
+      }
+      if (!city) {
+        return []
+      }
+
+      cityId = city.id
+    }
+
+    const { data: rows, error } = await supabase
+      .from('event_submissions')
+      .select(
+        `
+        id,
+        user_id,
+        title,
+        description,
+        photo_storage_path,
+        status,
+        created_at,
+        venue_id,
+        venue_name,
+        venues (
+          name,
+          slug,
+          address_line1,
+          city_id
+        )
+      `,
+      )
+      .eq('status', 'pending_review')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      throw error
+    }
+
+    const items: AdminPendingEventSubmissionItem[] = []
+
+    for (const row of rows ?? []) {
+      const venue = Array.isArray(row.venues) ? row.venues[0] : row.venues
+
+      if (cityId && row.venue_id && venue?.city_id !== cityId) {
+        continue
+      }
+
+      const { data: userData } = await supabase.auth.admin.getUserById(row.user_id)
+
+      let photoUrl: string | null = null
+      if (row.photo_storage_path) {
+        const { data: signed } = await supabase.storage
+          .from(EVENT_PHOTO_BUCKET)
+          .createSignedUrl(row.photo_storage_path, 3600)
+        photoUrl = signed?.signedUrl ?? null
+      }
+
+      items.push({
+        id: row.id,
+        user_email: userData.user?.email ?? null,
+        title: row.title,
+        description: row.description,
+        photo_url: photoUrl,
+        photo_storage_path: row.photo_storage_path,
+        status: row.status,
+        created_at: row.created_at,
+        venue_id: row.venue_id,
+        venue_name: venue?.name ?? row.venue_name ?? 'Unknown venue',
+        venue_slug: venue?.slug ?? null,
+        address_line1: venue?.address_line1 ?? null,
+      })
+    }
+
+    return items
+  })
+
 async function setSubmissionStatus(
   submissionId: string,
   status: 'approved' | 'rejected',
