@@ -6,6 +6,12 @@ import {
   discoverVenuesFromNames,
   type DiscoverVenuesFromNamesResult,
 } from '@/lib/scrape/discoverVenuesPipeline'
+import {
+  fetchNewVenuesFromGoogle,
+  getGooglePlaceById,
+  type GooglePlaceVenue,
+} from '@/lib/scrape/googlePlaces'
+import { saveDiscoveredVenue } from '@/lib/scrape/saveDiscoveredVenue'
 import { createSupabaseServiceClient } from '@/lib/supabaseService'
 import type { Database } from '@/types/database'
 
@@ -293,4 +299,139 @@ export const setVenueScheduleCadence = createServerFn({ method: 'POST' })
     }
 
     return { ok: true }
+  })
+
+export interface GoogleVenueSearchResult extends GooglePlaceVenue {
+  existingVenueId: string | null
+}
+
+export const searchGoogleVenuesInCity = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      citySlug: z.string().min(1),
+      maxResults: z.number().int().min(1).max(50).optional(),
+    }),
+  )
+  .handler(async ({ data }): Promise<GoogleVenueSearchResult[]> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { data: city, error: cityError } = await supabase
+      .from('cities')
+      .select('id, center_lat, center_lng')
+      .eq('slug', data.citySlug)
+      .eq('is_active', true)
+      .single()
+
+    if (cityError || !city) {
+      throw cityError ?? new Error('City not found.')
+    }
+
+    const { data: existingRows } = await supabase
+      .from('venues')
+      .select('id, place_id')
+      .eq('city_id', city.id)
+      .is('archived_at', null)
+      .not('place_id', 'is', null)
+
+    const existingByPlaceId = new Map<string, string>(
+      (existingRows ?? [])
+        .filter((row): row is typeof row & { place_id: string } => row.place_id !== null)
+        .map((row) => [row.place_id, row.id]),
+    )
+
+    const excludePlaceIds = new Set(existingByPlaceId.keys())
+
+    const { venues } = await fetchNewVenuesFromGoogle({
+      latitude: city.center_lat,
+      longitude: city.center_lng,
+      targetCount: data.maxResults ?? 20,
+      excludePlaceIds,
+    })
+
+    return venues.map((venue) => ({
+      ...venue,
+      existingVenueId: existingByPlaceId.get(venue.placeId) ?? null,
+    }))
+  })
+
+export interface DiscoverSelectedResult {
+  created: number
+  updated: number
+  skipped: number
+  failed: number
+  venueIds: string[]
+}
+
+export const discoverSelectedVenues = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      citySlug: z.string().min(1),
+      placeIds: z.array(z.string().min(1)).min(1).max(50),
+    }),
+  )
+  .handler(async ({ data }): Promise<DiscoverSelectedResult> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { data: city, error: cityError } = await supabase
+      .from('cities')
+      .select('id')
+      .eq('slug', data.citySlug)
+      .eq('is_active', true)
+      .single()
+
+    if (cityError || !city) {
+      throw cityError ?? new Error('City not found.')
+    }
+
+    const result: DiscoverSelectedResult = { created: 0, updated: 0, skipped: 0, failed: 0, venueIds: [] }
+
+    for (const placeId of data.placeIds) {
+      try {
+        const place = await getGooglePlaceById(placeId)
+        if (!place) {
+          result.skipped += 1
+          continue
+        }
+
+        const { data: existing } = await supabase
+          .from('venues')
+          .select('id, archived_at')
+          .eq('place_id', placeId)
+          .maybeSingle()
+
+        if (existing?.archived_at) {
+          result.skipped += 1
+          continue
+        }
+
+        const saved = await saveDiscoveredVenue(supabase, {
+          cityId: city.id,
+          place,
+          existingVenueId: existing?.id,
+        })
+
+        result.venueIds.push(saved.venueId)
+        if (saved.created) {
+          result.created += 1
+        } else {
+          result.updated += 1
+        }
+      } catch {
+        result.failed += 1
+      }
+    }
+
+    return result
   })

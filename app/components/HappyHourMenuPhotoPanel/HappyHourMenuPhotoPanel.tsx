@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Camera, Loader2 } from 'lucide-react'
+import { Camera, ImagePlus, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
@@ -181,7 +181,17 @@ export function HappyHourMenuPhotoPanel({
           onClick={() => inputRef.current?.click()}
         >
           <Camera className="size-4" />
-          {photoPayload ? 'Choose another photo' : 'Take or upload photo'}
+          {photoPayload ? (
+            <>
+              <ImagePlus className="size-4" />
+              Choose another photo
+            </>
+          ) : (
+            <>
+              <Camera className="size-4" />
+              Take or upload photo
+            </>
+          )}
         </Button>
 
         {photoPayload ? (

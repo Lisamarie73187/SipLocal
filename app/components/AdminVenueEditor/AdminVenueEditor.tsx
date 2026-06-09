@@ -13,7 +13,7 @@ import {
 } from '@/server/adminDiscover'
 import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
 import { parseHappyHourMenuPhotoAdmin } from '@/server/menuPhotoSubmissions'
-import type { AdminVenueEditorSlot, HoursOfOperationEntry } from '@/server/adminVenues'
+import type { AdminVenueEditorSlot } from '@/server/adminVenues'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
 import type { DayOfWeek, ScrapeConfidence } from '@/types/venue'
@@ -37,6 +37,7 @@ import { AdminVenueEventsSection, type DraftEventInput } from './AdminVenueEvent
 import { AdminVenueManagersSection } from '@/components/AdminVenueManagersSection/AdminVenueManagersSection'
 import { AdminMenuSubmissionsPanel } from '@/components/AdminMenuSubmissionsPanel/AdminMenuSubmissionsPanel'
 import { AdminEventSubmissionsPanel } from '@/components/AdminEventSubmissionsPanel/AdminEventSubmissionsPanel'
+import { AdminVenueRescrubCard } from '@/components/AdminVenueRescrubCard/AdminVenueRescrubCard'
 import type { AdminVenueEditorProps, SlotFormState, VenueFormState } from './AdminVenueEditor.types'
 
 const inputClassName =
@@ -370,6 +371,33 @@ export function AdminVenueEditor({
           </p>
         )}
       </section>
+
+      {mode === 'edit' && venue.id ? (
+        <AdminVenueRescrubCard
+          venueId={venue.id}
+          hasWebsite={Boolean(venue.website_url?.trim())}
+          hasPlaceId={Boolean(venue.place_id?.trim())}
+          onVenueInfoApplied={async () => {
+            if (!venue.id) return
+            const fresh = await getAdminVenueForEdit({ data: { venueId: venue.id } })
+            if (fresh.venue) setVenue(venueToFormState(fresh.venue))
+          }}
+          onHappyHoursScraped={(parsed) => {
+            setSlots((current) => [...parsedSlotsToFormState(parsed), ...current])
+          }}
+          onEventsScraped={(events) => {
+            const first = events[0]
+            if (first) {
+              setPendingDraftEvent({
+                key: crypto.randomUUID(),
+                title: first.title,
+                description: first.description ?? '',
+                sourceUrl: null,
+              })
+            }
+          }}
+        />
+      ) : null}
 
       {statusWarning ? (
         <p className="rounded-xl border border-secondary/50 bg-secondary/10 px-4 py-3 text-sm text-dark">

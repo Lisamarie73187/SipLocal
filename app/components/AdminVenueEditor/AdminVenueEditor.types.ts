@@ -2,8 +2,8 @@ import type {
   AdminVenueEditorData,
   AdminVenueEditorEvent,
   AdminVenueEditorSlot,
-  HoursOfOperationEntry,
 } from '@/server/adminVenues'
+import type { HoursOfOperationEntry } from '@/server/adminVenues.types'
 import type { Database } from '@/types/database'
 import type { DayOfWeek } from '@/types/venue'
 

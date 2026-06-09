@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Camera, Link2, Loader2, Sparkles } from 'lucide-react'
+import { Camera, ImagePlus, Link2, Loader2, Sparkles } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { scrubEventsFromPhoto, scrubEventsFromUrl } from '@/server/adminEventScrub'
@@ -220,7 +220,17 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
             onClick={() => fileInputRef.current?.click()}
           >
             <Camera className="size-4" />
-            {photoPayload ? 'Choose another photo' : 'Take or upload photo'}
+            {photoPayload ? (
+              <>
+                <ImagePlus className="size-4" />
+                Choose another photo
+              </>
+            ) : (
+              <>
+                <Camera className="size-4" />
+                Take or upload photo
+              </>
+            )}
           </Button>
           {photoPayload ? (
             <Button type="button" size="sm" className="min-h-11" disabled={busy} onClick={handleScrubPhoto}>

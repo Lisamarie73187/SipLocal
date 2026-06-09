@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { Camera, ImagePlus, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
@@ -155,7 +155,17 @@ export function VenueInfoCorrection({ venueId, venueSlug }: VenueInfoCorrectionP
           disabled={submitting}
           onClick={() => inputRef.current?.click()}
         >
-          {photoPayload ? 'Choose another photo' : 'Take or upload photo'}
+          {photoPayload ? (
+            <>
+              <ImagePlus className="size-4" />
+              Choose another photo
+            </>
+          ) : (
+            <>
+              <Camera className="size-4" />
+              Take or upload photo
+            </>
+          )}
         </Button>
 
         {photoPayload ? (

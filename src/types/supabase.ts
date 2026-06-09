@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -137,6 +132,7 @@ export type Database = {
       events: {
         Row: {
           city_id: string
+          community_verified_at: string | null
           confidence: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at: string
           day_of_week: number | null
@@ -156,6 +152,7 @@ export type Database = {
         }
         Insert: {
           city_id: string
+          community_verified_at?: string | null
           confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at?: string
           day_of_week?: number | null
@@ -175,6 +172,7 @@ export type Database = {
         }
         Update: {
           city_id?: string
+          community_verified_at?: string | null
           confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at?: string
           day_of_week?: number | null
@@ -1105,3 +1103,4 @@ export const Constants = {
     },
   },
 } as const
+

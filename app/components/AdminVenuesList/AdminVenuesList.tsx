@@ -3,6 +3,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Archive, Loader2, Pencil, Plus } from 'lucide-react'
 
 import { AdminArchiveVenues } from '@/components/AdminArchiveVenues/AdminArchiveVenues'
+import { AdminVenueDiscoverPanel } from '@/components/AdminVenueDiscoverPanel/AdminVenueDiscoverPanel'
 import { AdminUnpublishVenues } from '@/components/AdminUnpublishVenues/AdminUnpublishVenues'
 import { Button } from '@/components/ui/button'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
@@ -457,6 +458,13 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
           </button>
         ) : null}
       </div>
+
+      {!showArchived ? (
+        <AdminVenueDiscoverPanel
+          citySlug={citySlug}
+          onVenuesAdded={() => void load()}
+        />
+      ) : null}
 
       {!loading && venues.length > 0 ? (
         <div className="sticky top-0 z-10 space-y-2 rounded-xl border border-border/70 bg-card/95 p-4 shadow-sm backdrop-blur-sm">
