@@ -10,6 +10,7 @@ import {
   setVenueCommunityVerified,
   setVenueHappyHourConfidence,
   setVenueScheduleCadence,
+  verifyVenueByPerson,
 } from '@/server/adminDiscover'
 import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
 import { parseHappyHourMenuPhotoAdmin } from '@/server/menuPhotoSubmissions'
@@ -206,6 +207,7 @@ export function AdminVenueEditor({
   const [saving, setSaving] = useState(false)
   const [confidenceSaving, setConfidenceSaving] = useState(false)
   const [communitySaving, setCommunitySaving] = useState(false)
+  const [verifiedSaving, setVerifiedSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingDraftEvent, setPendingDraftEvent] = useState<DraftEventInput | null>(null)
   const [autoSlug, setAutoSlug] = useState(mode === 'create')
@@ -783,7 +785,33 @@ export function AdminVenueEditor({
         <section className="space-y-3 rounded-xl border border-border/70 bg-background/60 p-4">
           <h3 className="font-heading text-sm font-semibold text-dark">Data quality</h3>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>{editorFreshnessLabel ?? 'No scrape or verification date recorded yet.'}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p>{editorFreshnessLabel ?? 'No scrape or verification date recorded yet.'}</p>
+              {mode === 'edit' && venue.id ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="min-h-9 shrink-0"
+                  disabled={verifiedSaving}
+                  onClick={() => {
+                    if (!venue.id) return
+                    setVerifiedSaving(true)
+                    void verifyVenueByPerson({ data: { venueId: venue.id } })
+                      .then(() => {
+                        updateVenue({ last_verified_at: new Date().toISOString() })
+                      })
+                      .catch((err) => {
+                        setError(err instanceof Error ? err.message : 'Could not mark verified.')
+                      })
+                      .finally(() => setVerifiedSaving(false))
+                  }}
+                >
+                  {verifiedSaving ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                  Mark verified now
+                </Button>
+              ) : null}
+            </div>
             {editorSourceCount > 0 ? (
               <p>{formatSourceCountLabel(editorSourceCount)}</p>
             ) : null}

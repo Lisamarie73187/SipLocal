@@ -752,7 +752,10 @@ export const approveVenueMenuSubmission = createServerFn({ method: 'POST' })
 
     const { error: venueMenuError } = await supabase
       .from('venues')
-      .update({ happy_hour_menu_storage_path: submission.storage_path })
+      .update({
+        happy_hour_menu_storage_path: submission.storage_path,
+        last_verified_at: new Date().toISOString(),
+      })
       .eq('id', submission.venue_id)
 
     if (venueMenuError) {
