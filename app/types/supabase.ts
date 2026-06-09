@@ -137,6 +137,7 @@ export type Database = {
       events: {
         Row: {
           city_id: string
+          community_verified_at: string | null
           confidence: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at: string
           day_of_week: number | null
@@ -156,6 +157,7 @@ export type Database = {
         }
         Insert: {
           city_id: string
+          community_verified_at?: string | null
           confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at?: string
           day_of_week?: number | null
@@ -175,6 +177,7 @@ export type Database = {
         }
         Update: {
           city_id?: string
+          community_verified_at?: string | null
           confidence?: Database["public"]["Enums"]["scrape_confidence"] | null
           created_at?: string
           day_of_week?: number | null
