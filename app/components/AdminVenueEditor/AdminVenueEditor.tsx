@@ -18,6 +18,7 @@ import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
 import type { DayOfWeek, ScrapeConfidence } from '@/types/venue'
 import { expandGroupedSlotsForSave, groupSlotsForEditor } from '@/utils/happyHourEditorSlots'
+import { parseHoursOfOperation } from '@/utils/parseHoursOfOperation'
 import type { ParsedHappyHourSlot } from '@/utils/parseHappyHourPaste'
 import { slugifyVenueName } from '@/utils/slug'
 import { collectUniqueUrls } from '@/utils/urlDisplay'
@@ -137,6 +138,56 @@ function parsedSlotsToFormState(parsed: ParsedHappyHourSlot[]): SlotFormState[] 
     source_urls: [],
     deals: [{ label: '', category: 'drinks', price_text: null }],
   }))
+}
+
+interface HoursPasteParserProps {
+  onParsed: (entries: Array<{ day: number; open: string; close: string }>) => void
+}
+
+function HoursPasteParser({ onParsed }: HoursPasteParserProps) {
+  const [text, setText] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const handleParse = (): void => {
+    const entries = parseHoursOfOperation(text)
+    if (entries.length === 0) {
+      setError('Could not parse any hours. Try a format like "Mon-Fri 11am-10pm, Sat-Sun 12pm-8pm".')
+      return
+    }
+    setError(null)
+    setText('')
+    onParsed(entries)
+  }
+
+  return (
+    <div className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-3">
+      <p className="text-xs font-medium text-muted-foreground">Paste hours text to auto-fill</p>
+      <textarea
+        value={text}
+        onChange={(e) => { setText(e.target.value); setError(null) }}
+        placeholder={'Mon–Fri 11am–10pm\nSat–Sun 12pm–8pm'}
+        rows={2}
+        className="h-auto w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-sm text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            handleParse()
+          }
+        }}
+      />
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="min-h-9"
+        disabled={!text.trim()}
+        onClick={handleParse}
+      >
+        Parse hours
+      </Button>
+    </div>
+  )
 }
 
 export function AdminVenueEditor({
@@ -570,6 +621,13 @@ export function AdminVenueEditor({
           <p className="text-xs text-muted-foreground">
             Regular open/close hours by day. Used to show today's hours on the detail card.
           </p>
+          <HoursPasteParser
+            onParsed={(entries) =>
+              updateVenue({
+                hours_of_operation: entries.sort((a, b) => a.day - b.day),
+              })
+            }
+          />
           {([0, 1, 2, 3, 4, 5, 6] as const).map((day) => {
             const entry = venue.hours_of_operation.find((h) => h.day === day)
             return (
