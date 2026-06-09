@@ -56,6 +56,7 @@ function venueToFormState(
     phone: venue.phone ?? '',
     website_url: venue.website_url ?? '',
     description: venue.description ?? '',
+    admin_notes: venue.admin_notes ?? '',
     place_id: venue.place_id ?? '',
     venue_types: venue.venue_types ?? [],
     vibes: venue.vibes ?? [],
@@ -267,6 +268,7 @@ export function AdminVenueEditor({
             phone: venue.phone || null,
             website_url: venue.website_url || null,
             description: venue.description || null,
+            admin_notes: venue.admin_notes || null,
             price_level: venue.price_level,
             data_status: venue.data_status,
             is_published: venue.is_published,
@@ -510,6 +512,17 @@ export function AdminVenueEditor({
             value={venue.description}
             onChange={(event) => updateVenue({ description: event.target.value })}
             rows={3}
+            className={cn(inputClassName, 'h-auto py-2')}
+          />
+        </label>
+
+        <label className="block space-y-2">
+          <span className={labelClassName}>Admin notes (internal only)</span>
+          <textarea
+            value={venue.admin_notes}
+            onChange={(event) => updateVenue({ admin_notes: event.target.value })}
+            rows={3}
+            placeholder="Internal notes — not shown to users"
             className={cn(inputClassName, 'h-auto py-2')}
           />
         </label>

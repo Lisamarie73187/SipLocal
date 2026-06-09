@@ -306,6 +306,7 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
       phone: venue.phone?.trim() || null,
       website_url: websiteUrl,
       description: venue.description?.trim() || null,
+      admin_notes: venue.admin_notes?.trim() || null,
       price_level: venue.price_level,
       data_status: dataStatus,
       is_published: venue.is_published,

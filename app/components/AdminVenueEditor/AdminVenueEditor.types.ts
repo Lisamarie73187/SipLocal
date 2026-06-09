@@ -19,6 +19,7 @@ export interface VenueFormState {
   phone: string
   website_url: string
   description: string
+  admin_notes: string
   price_level: Database['public']['Enums']['venue_price_level']
   data_status: Database['public']['Enums']['venue_data_status']
   is_published: boolean

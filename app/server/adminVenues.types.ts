@@ -72,6 +72,7 @@ export interface AdminVenueEditorData {
     phone: string | null
     website_url: string | null
     description: string | null
+    admin_notes: string | null
     price_level: Database['public']['Enums']['venue_price_level']
     data_status: Database['public']['Enums']['venue_data_status']
     is_published: boolean

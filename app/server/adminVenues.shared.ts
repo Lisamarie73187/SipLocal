@@ -53,6 +53,7 @@ const venueInputSchema = z.object({
   phone: z.string().nullable().optional(),
   website_url: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
   description: z.string().nullable().optional(),
+  admin_notes: z.string().nullable().optional(),
   price_level: z.enum(['$', '$$', '$$$']),
   data_status: z.enum([
     'live',

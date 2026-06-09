@@ -1,3 +1,7 @@
+(node:59155) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Initialising login role...
 export type Json =
   | string
   | number
@@ -741,6 +745,7 @@ export type Database = {
         Row: {
           address_line1: string
           address_line2: string | null
+          admin_notes: string | null
           archived_at: string | null
           city_id: string
           community_verified_at: string | null
@@ -780,6 +785,7 @@ export type Database = {
         Insert: {
           address_line1: string
           address_line2?: string | null
+          admin_notes?: string | null
           archived_at?: string | null
           city_id: string
           community_verified_at?: string | null
@@ -819,6 +825,7 @@ export type Database = {
         Update: {
           address_line1?: string
           address_line2?: string | null
+          admin_notes?: string | null
           archived_at?: string | null
           city_id?: string
           community_verified_at?: string | null
