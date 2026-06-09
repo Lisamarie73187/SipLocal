@@ -16,6 +16,7 @@ import {
 interface SubmitVenueSuggestionBody {
   citySlug?: string
   venueName?: string
+  userDescription?: string
   imageBase64?: string
   mediaType?: string
   submitterLocation?: unknown
@@ -82,11 +83,14 @@ Deno.serve(async (req) => {
     })
 
     const submitterLocation = parseSubmitterLocation(body.submitterLocation)
+    const userDescription = typeof body.userDescription === 'string' ? body.userDescription.trim() || null : null
+
     const { error } = await supabase.from('venue_suggestions').insert({
       id: submissionId,
       user_id: userId,
       city_id: cityId,
       venue_name: venueName,
+      user_description: userDescription,
       storage_path: storagePath,
       status: 'pending_review',
       parsed_slots: null,
