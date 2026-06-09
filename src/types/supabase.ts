@@ -1,3 +1,7 @@
+(node:99660) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Initialising login role...
 export type Json =
   | string
   | number
@@ -7,6 +11,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -685,10 +694,11 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path: string
+          storage_path: string | null
           submitter_lat: number | null
           submitter_lng: number | null
           updated_at: string
+          user_description: string | null
           user_id: string
           venue_name: string
         }
@@ -700,10 +710,11 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path: string
+          storage_path?: string | null
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string
+          user_description?: string | null
           user_id: string
           venue_name: string
         }
@@ -715,10 +726,11 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path?: string
+          storage_path?: string | null
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string
+          user_description?: string | null
           user_id?: string
           venue_name?: string
         }
@@ -736,6 +748,7 @@ export type Database = {
         Row: {
           address_line1: string
           address_line2: string | null
+          admin_notes: string | null
           archived_at: string | null
           city_id: string
           community_verified_at: string | null
@@ -744,6 +757,8 @@ export type Database = {
           description: string | null
           featured_until: string | null
           happy_hour_menu_storage_path: string | null
+          happy_hour_menu_url: string | null
+          hours_of_operation: Json | null
           id: string
           image_url: string | null
           is_featured: boolean
@@ -775,6 +790,7 @@ export type Database = {
         Insert: {
           address_line1: string
           address_line2?: string | null
+          admin_notes?: string | null
           archived_at?: string | null
           city_id: string
           community_verified_at?: string | null
@@ -783,6 +799,8 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           happy_hour_menu_storage_path?: string | null
+          happy_hour_menu_url?: string | null
+          hours_of_operation?: Json | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -814,6 +832,7 @@ export type Database = {
         Update: {
           address_line1?: string
           address_line2?: string | null
+          admin_notes?: string | null
           archived_at?: string | null
           city_id?: string
           community_verified_at?: string | null
@@ -822,6 +841,8 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           happy_hour_menu_storage_path?: string | null
+          happy_hour_menu_url?: string | null
+          hours_of_operation?: Json | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -1103,4 +1124,3 @@ export const Constants = {
     },
   },
 } as const
-

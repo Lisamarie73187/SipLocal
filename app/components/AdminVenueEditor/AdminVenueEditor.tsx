@@ -37,6 +37,7 @@ import { AdminVenueEventsSection, type DraftEventInput } from './AdminVenueEvent
 import { AdminVenueManagersSection } from '@/components/AdminVenueManagersSection/AdminVenueManagersSection'
 import { AdminMenuSubmissionsPanel } from '@/components/AdminMenuSubmissionsPanel/AdminMenuSubmissionsPanel'
 import { AdminEventSubmissionsPanel } from '@/components/AdminEventSubmissionsPanel/AdminEventSubmissionsPanel'
+import { AdminVenueMenuPhotoCard } from '@/components/AdminVenueMenuPhotoCard/AdminVenueMenuPhotoCard'
 import { AdminVenueRescrubCard } from '@/components/AdminVenueRescrubCard/AdminVenueRescrubCard'
 import type { AdminVenueEditorProps, SlotFormState, VenueFormState } from './AdminVenueEditor.types'
 
@@ -66,6 +67,8 @@ function venueToFormState(
     community_verified_at: venue.community_verified_at ?? '',
     last_scraped_at: venue.last_scraped_at ?? '',
     schedule_cadence: venue.schedule_cadence ?? '',
+    happy_hour_menu_storage_path: venue.happy_hour_menu_storage_path ?? null,
+    happy_hour_menu_url: venue.happy_hour_menu_url ?? null,
   }
 }
 
@@ -397,6 +400,10 @@ export function AdminVenueEditor({
             }
           }}
         />
+      ) : null}
+
+      {mode === 'edit' && venue.id ? (
+        <AdminVenueMenuPhotoCard venueId={venue.id} />
       ) : null}
 
       {statusWarning ? (

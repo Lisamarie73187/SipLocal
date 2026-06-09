@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { getVenueHappyHourMenuImage } from '@/server/venueMenuImage'
 
 export interface UseVenueMenuImageResult {
   menuImageUrl: string | null
   loading: boolean
+  reload: () => Promise<void>
 }
 
 export function useVenueMenuImage(venueId: string): UseVenueMenuImageResult {
   const [menuImageUrl, setMenuImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tick, setTick] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -35,7 +37,11 @@ export function useVenueMenuImage(venueId: string): UseVenueMenuImageResult {
     return () => {
       cancelled = true
     }
-  }, [venueId])
+  }, [venueId, tick])
 
-  return { menuImageUrl, loading }
+  const reload = useCallback(async (): Promise<void> => {
+    setTick((n) => n + 1)
+  }, [])
+
+  return { menuImageUrl, loading, reload }
 }
