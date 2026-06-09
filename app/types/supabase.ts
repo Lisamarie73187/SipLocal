@@ -1,4 +1,4 @@
-(node:62325) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
+(node:66310) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
 Support for loading ES Module in require() is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 Initialising login role...
@@ -694,7 +694,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path: string
+          storage_path: string | null
           submitter_lat: number | null
           submitter_lng: number | null
           updated_at: string
@@ -710,7 +710,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path: string
+          storage_path?: string | null
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string
@@ -726,7 +726,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["menu_submission_status"]
-          storage_path?: string
+          storage_path?: string | null
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string

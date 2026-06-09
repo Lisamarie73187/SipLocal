@@ -60,27 +60,27 @@ Deno.serve(async (req) => {
       return errorResponse('Enter a venue name between 2 and 200 characters.')
     }
 
-    if (!body.imageBase64 || typeof body.imageBase64 !== 'string') {
-      return errorResponse('imageBase64 is required.')
-    }
+    const hasPhoto = !!body.imageBase64 && typeof body.imageBase64 === 'string'
 
-    if (!body.mediaType || !isMenuPhotoMediaType(body.mediaType)) {
+    if (hasPhoto && (!body.mediaType || !isMenuPhotoMediaType(body.mediaType))) {
       return errorResponse('Use a JPEG, PNG, or WebP image.')
     }
-
-    const mediaType = body.mediaType as MenuPhotoMediaType
-    validateMenuPhotoPayload({ imageBase64: body.imageBase64, mediaType })
 
     const cityId = await resolveCityId(body.citySlug)
     const supabase = createServiceClient()
     const submissionId = crypto.randomUUID()
 
-    const storagePath = await uploadVenueSuggestionPhotoToStorage(supabase, {
-      cityId,
-      submissionId,
-      imageBase64: body.imageBase64,
-      mediaType,
-    })
+    let storagePath: string | null = null
+    if (hasPhoto) {
+      const mediaType = body.mediaType as MenuPhotoMediaType
+      validateMenuPhotoPayload({ imageBase64: body.imageBase64!, mediaType })
+      storagePath = await uploadVenueSuggestionPhotoToStorage(supabase, {
+        cityId,
+        submissionId,
+        imageBase64: body.imageBase64!,
+        mediaType,
+      })
+    }
 
     const submitterLocation = parseSubmitterLocation(body.submitterLocation)
     const userDescription = typeof body.userDescription === 'string' ? body.userDescription.trim() || null : null
