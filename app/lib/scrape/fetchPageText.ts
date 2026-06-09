@@ -2,6 +2,8 @@ import { ScrapeApiError } from './errors'
 
 const MAX_PAGE_TEXT_LENGTH = 20000
 
+const HOURS_SUB_PATHS = ['/hours', '/contact', '/about', '/location', '/visit', '/find-us']
+
 function htmlToText(html: string): string {
   const withoutNoise = html
     .replace(/<(script|style|noscript|svg|template)[\s\S]*?<\/\1>/gi, ' ')
@@ -86,4 +88,27 @@ export async function fetchPageText(url: string): Promise<string> {
   }
 
   return text.slice(0, MAX_PAGE_TEXT_LENGTH)
+}
+
+async function tryFetchPageText(url: string): Promise<string | null> {
+  try {
+    const text = await fetchPageText(url)
+    return text
+  } catch {
+    return null
+  }
+}
+
+export async function fetchPageTextWithSubPages(baseUrl: string): Promise<string> {
+  const parsed = new URL(baseUrl)
+  const origin = parsed.origin
+
+  const mainText = await fetchPageText(baseUrl)
+
+  const subPageTexts = await Promise.all(
+    HOURS_SUB_PATHS.map((path) => tryFetchPageText(`${origin}${path}`)),
+  )
+
+  const combined = [mainText, ...subPageTexts.filter((t): t is string => t !== null)].join('\n\n')
+  return combined.slice(0, MAX_PAGE_TEXT_LENGTH)
 }

@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { AdminAuthError, requireAdmin } from '@/lib/adminAuth.server'
 import { getAnthropicApiKey, getAnthropicHappyHourModel } from '@/lib/scrape/anthropicConfig'
-import { fetchPageText } from '@/lib/scrape/fetchPageText'
+import { fetchPageText, fetchPageTextWithSubPages } from '@/lib/scrape/fetchPageText'
 import { getGooglePlaceById } from '@/lib/scrape/googlePlaces'
 import { parseEventsFromPageText } from '@/lib/scrape/parseEventsWithAnthropic'
 import { parseHappyHourPasteSmart } from '@/lib/scrape/parseHappyHourWithAnthropic'
@@ -77,7 +77,7 @@ const VENUE_INFO_SYSTEM_PROMPT = `You extract structured venue metadata from a b
 
 Return ONLY valid JSON (no markdown) with this shape:
 {
-  "description": "Short 1-2 sentence description of the venue vibe and concept, or null",
+  "description": "One sentence max, 150 characters or fewer. Capture the vibe and concept only. No em dashes. Null if not enough info.",
   "venue_types": ["bar"],
   "price_level": "$$",
   "vibes": ["patio", "dog_friendly"],
@@ -238,7 +238,7 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
     const venue = await getVenueForScrub(data.venueId)
 
     if (venue.website_url) {
-      const pageText = await fetchPageText(venue.website_url)
+      const pageText = await fetchPageTextWithSubPages(venue.website_url)
       const info = await parseVenueInfoFromText(pageText)
       const fieldsUpdated = await applyVenueInfoToDb(data.venueId, info)
       return { venueId: data.venueId, source: 'website', fieldsUpdated }

@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url)
-    const venueId = url.searchParams.get('venueId')
+    const venueId = url.searchParams.get('venueId') ?? req.headers.get('x-venue-id')
 
     if (!venueId) {
       return errorResponse('venueId is required.')
