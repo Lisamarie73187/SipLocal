@@ -1,4 +1,4 @@
-(node:61339) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
+(node:62325) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
 Support for loading ES Module in require() is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 Initialising login role...
@@ -757,6 +757,7 @@ export type Database = {
           description: string | null
           featured_until: string | null
           happy_hour_menu_storage_path: string | null
+          hours_of_operation: Json | null
           id: string
           image_url: string | null
           is_featured: boolean
@@ -797,6 +798,7 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           happy_hour_menu_storage_path?: string | null
+          hours_of_operation?: Json | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -837,6 +839,7 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           happy_hour_menu_storage_path?: string | null
+          hours_of_operation?: Json | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
