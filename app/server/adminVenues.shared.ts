@@ -54,6 +54,7 @@ const venueInputSchema = z.object({
   website_url: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
   description: z.string().nullable().optional(),
   admin_notes: z.string().nullable().optional(),
+  happy_hour_menu_url: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
   price_level: z.enum(['$', '$$', '$$$']),
   data_status: z.enum([
     'live',
