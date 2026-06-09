@@ -240,3 +240,32 @@ export const rejectVenueEventSubmission = createServerFn({ method: 'POST' })
       throw toAdminError(error)
     }
   })
+
+export const setEventCommunityVerified = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      eventId: z.string().uuid(),
+      enabled: z.boolean(),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ communityVerifiedAt: string | null }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAdminError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+    const communityVerifiedAt = data.enabled ? new Date().toISOString() : null
+
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({ community_verified_at: communityVerifiedAt })
+      .eq('id', data.eventId)
+
+    if (updateError) {
+      throw updateError
+    }
+
+    return { communityVerifiedAt }
+  })

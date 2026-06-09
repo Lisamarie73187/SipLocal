@@ -53,6 +53,7 @@ export interface AdminVenueEditorEvent {
   is_published: boolean
   confidence: Database['public']['Enums']['scrape_confidence'] | null
   source_urls: string[]
+  community_verified_at: string | null
 }
 
 export interface AdminVenueEditorData {

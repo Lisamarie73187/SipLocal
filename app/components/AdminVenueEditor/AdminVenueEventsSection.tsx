@@ -6,6 +6,7 @@ import { EventScrubPanel } from '@/components/EventScrubPanel'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
 import { saveAdminVenueEvents } from '@/server/adminVenues'
 import { scrubEventsFromUrl } from '@/server/adminEventScrub'
+import { setEventCommunityVerified } from '@/server/eventSubmissions'
 import type { AdminVenueEditorEvent } from '@/server/adminVenues'
 import type { ParsedEvent } from '@/lib/scrape/parseEventsWithAnthropic'
 import type { EventType } from '@/types/event'
@@ -38,6 +39,7 @@ export interface EventFormState {
   is_published: boolean
   confidence: ScrapeConfidence | null
   source_urls: string[]
+  community_verified_at: string | null
 }
 
 export function eventsToFormState(events: AdminVenueEditorEvent[]): EventFormState[] {
@@ -55,6 +57,7 @@ export function eventsToFormState(events: AdminVenueEditorEvent[]): EventFormSta
     is_published: event.is_published,
     confidence: event.confidence,
     source_urls: event.source_urls,
+    community_verified_at: event.community_verified_at,
   }))
 }
 
@@ -73,6 +76,7 @@ function newEmptyEvent(): EventFormState {
     is_published: false,
     confidence: null,
     source_urls: [],
+    community_verified_at: null,
   }
 }
 
@@ -91,6 +95,7 @@ function scrubbedEventToFormState(event: ParsedEvent, sourceUrl: string | null):
     is_published: false,
     confidence: 'low',
     source_urls: sourceUrl ? [sourceUrl] : [],
+    community_verified_at: null,
   }
 }
 
@@ -135,6 +140,7 @@ function draftEventToFormState(draft: DraftEventInput): EventFormState {
     is_published: false,
     confidence: null,
     source_urls: draft.sourceUrl ? [draft.sourceUrl] : [],
+    community_verified_at: null,
   }
 }
 
@@ -153,6 +159,7 @@ export function AdminVenueEventsSection({
   const [savedNotice, setSavedNotice] = useState<string | null>(null)
   const [scrubbingKey, setScrubbingKey] = useState<string | null>(null)
   const [scrubError, setScrubError] = useState<string | null>(null)
+  const [communityVerifyingKey, setCommunityVerifyingKey] = useState<string | null>(null)
 
   useEffect(() => {
     setEvents(eventsToFormState(initialEvents))
@@ -408,6 +415,60 @@ export function AdminVenueEventsSection({
                   />
                   <span className="text-sm font-medium text-dark">Published on map</span>
                 </label>
+
+                {event.id ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-dark">Community verified</p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={event.community_verified_at ? 'default' : 'outline'}
+                      className="min-h-9 w-full"
+                      disabled={communityVerifyingKey !== null}
+                      aria-pressed={Boolean(event.community_verified_at)}
+                      onClick={() => {
+                        const next = !event.community_verified_at
+                        setCommunityVerifyingKey(event.key)
+                        void setEventCommunityVerified({
+                          data: { eventId: event.id!, enabled: next },
+                        })
+                          .then(({ communityVerifiedAt }) => {
+                            setEvents((current) =>
+                              current.map((row) =>
+                                row.key === event.key
+                                  ? { ...row, community_verified_at: communityVerifiedAt }
+                                  : row,
+                              ),
+                            )
+                          })
+                          .catch((saveError) => {
+                            setError(
+                              saveError instanceof Error
+                                ? saveError.message
+                                : 'Could not update community verification',
+                            )
+                          })
+                          .finally(() => setCommunityVerifyingKey(null))
+                      }}
+                    >
+                      {communityVerifyingKey === event.key ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : null}
+                      {event.community_verified_at
+                        ? 'Community verified'
+                        : 'Mark community verified'}
+                    </Button>
+                    {event.community_verified_at ? (
+                      <p className="text-xs text-muted-foreground">
+                        {new Intl.DateTimeFormat('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        }).format(new Date(event.community_verified_at))}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

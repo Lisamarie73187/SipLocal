@@ -381,7 +381,7 @@ export const getAdminVenueForEdit = createServerFn({ method: 'GET' })
     const { data: eventRows, error: eventsError } = await supabase
       .from('events')
       .select(
-        'id, title, description, event_type, event_date, day_of_week, start_time, end_time, is_published, confidence, source_urls',
+        'id, title, description, event_type, event_date, day_of_week, start_time, end_time, is_published, confidence, source_urls, community_verified_at',
       )
       .eq('venue_id', data.venueId)
       .order('event_date', { ascending: true, nullsFirst: false })
@@ -472,6 +472,7 @@ export const getAdminVenueForEdit = createServerFn({ method: 'GET' })
         is_published: event.is_published,
         confidence: event.confidence,
         source_urls: event.source_urls ?? [],
+        community_verified_at: event.community_verified_at ?? null,
       })),
     }
   })
