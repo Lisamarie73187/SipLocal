@@ -98,6 +98,16 @@ const venueInputSchema = z.object({
       ]),
     )
     .optional(),
+  hours_of_operation: z
+    .array(
+      z.object({
+        day: z.number().int().min(0).max(6),
+        open: timeSchema,
+        close: timeSchema,
+      }),
+    )
+    .nullable()
+    .optional(),
 })
 
 export const saveVenueSchema = z.object({

@@ -315,6 +315,7 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
       venue_types: venue.venue_types ?? [],
       vibes: venue.vibes ?? [],
       schedule_cadence: venue.schedule_cadence ?? null,
+      hours_of_operation: venue.hours_of_operation ?? null,
     }
 
     if (venueId) {

@@ -14,6 +14,7 @@ import type {
   AdminVenueEditorData,
   AdminVenueEditorSlot,
   AdminVenueListItem,
+  HoursOfOperationEntry,
 } from '@/server/adminVenues.types'
 
 export type {
@@ -460,6 +461,7 @@ export const getAdminVenueForEdit = createServerFn({ method: 'GET' })
         last_scraped_at: venue.last_scraped_at,
         schedule_cadence: venue.schedule_cadence,
         image_url: venue.image_url,
+        hours_of_operation: (venue.hours_of_operation as HoursOfOperationEntry[] | null) ?? null,
       },
       slots,
       events: (eventRows ?? []).map((event) => ({

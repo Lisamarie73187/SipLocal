@@ -13,7 +13,7 @@ import {
 } from '@/server/adminDiscover'
 import { getAdminVenueForEdit, saveAdminVenue } from '@/server/adminVenues'
 import { parseHappyHourMenuPhotoAdmin } from '@/server/menuPhotoSubmissions'
-import type { AdminVenueEditorSlot } from '@/server/adminVenues'
+import type { AdminVenueEditorSlot, HoursOfOperationEntry } from '@/server/adminVenues'
 import { formatHappyHourDayLabel } from '@/utils/happyHourSchedule'
 import { getDayName } from '@/utils/happyHour'
 import type { DayOfWeek, ScrapeConfidence } from '@/types/venue'
@@ -57,6 +57,7 @@ function venueToFormState(
     website_url: venue.website_url ?? '',
     description: venue.description ?? '',
     admin_notes: venue.admin_notes ?? '',
+    hours_of_operation: venue.hours_of_operation ?? [],
     place_id: venue.place_id ?? '',
     venue_types: venue.venue_types ?? [],
     vibes: venue.vibes ?? [],
@@ -269,6 +270,7 @@ export function AdminVenueEditor({
             website_url: venue.website_url || null,
             description: venue.description || null,
             admin_notes: venue.admin_notes || null,
+            hours_of_operation: venue.hours_of_operation.length > 0 ? venue.hours_of_operation : null,
             price_level: venue.price_level,
             data_status: venue.data_status,
             is_published: venue.is_published,
@@ -526,6 +528,71 @@ export function AdminVenueEditor({
             className={cn(inputClassName, 'h-auto py-2')}
           />
         </label>
+
+        <div className="space-y-2">
+          <span className={labelClassName}>Hours of operation</span>
+          <p className="text-xs text-muted-foreground">
+            Regular open/close hours by day. Used to show today's hours on the detail card.
+          </p>
+          {([0, 1, 2, 3, 4, 5, 6] as const).map((day) => {
+            const entry = venue.hours_of_operation.find((h) => h.day === day)
+            return (
+              <div key={day} className="grid grid-cols-[6rem_1fr_1fr_auto] items-center gap-2">
+                <span className="text-sm text-dark">{getDayName(day as DayOfWeek)}</span>
+                <input
+                  type="time"
+                  value={entry?.open ?? ''}
+                  placeholder="Open"
+                  onChange={(e) => {
+                    const open = e.target.value
+                    updateVenue({
+                      hours_of_operation: open
+                        ? [
+                            ...venue.hours_of_operation.filter((h) => h.day !== day),
+                            { day, open, close: entry?.close ?? '' },
+                          ].sort((a, b) => a.day - b.day)
+                        : venue.hours_of_operation.filter((h) => h.day !== day),
+                    })
+                  }}
+                  className={inputClassName}
+                />
+                <input
+                  type="time"
+                  value={entry?.close ?? ''}
+                  placeholder="Close"
+                  onChange={(e) => {
+                    const close = e.target.value
+                    updateVenue({
+                      hours_of_operation: close
+                        ? [
+                            ...venue.hours_of_operation.filter((h) => h.day !== day),
+                            { day, open: entry?.open ?? '', close },
+                          ].sort((a, b) => a.day - b.day)
+                        : venue.hours_of_operation.filter((h) => h.day !== day),
+                    })
+                  }}
+                  className={inputClassName}
+                />
+                {entry ? (
+                  <button
+                    type="button"
+                    aria-label={`Clear ${getDayName(day as DayOfWeek)} hours`}
+                    onClick={() =>
+                      updateVenue({
+                        hours_of_operation: venue.hours_of_operation.filter((h) => h.day !== day),
+                      })
+                    }
+                    className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive"
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </button>
+                ) : (
+                  <div className="size-11" />
+                )}
+              </div>
+            )
+          })}
+        </div>
 
         <div className="space-y-2">
           <span className={labelClassName}>Venue type</span>

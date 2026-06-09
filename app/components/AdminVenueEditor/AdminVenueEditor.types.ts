@@ -2,6 +2,7 @@ import type {
   AdminVenueEditorData,
   AdminVenueEditorEvent,
   AdminVenueEditorSlot,
+  HoursOfOperationEntry,
 } from '@/server/adminVenues'
 import type { Database } from '@/types/database'
 import type { DayOfWeek } from '@/types/venue'
@@ -32,6 +33,7 @@ export interface VenueFormState {
   last_scraped_at: string
   schedule_cadence: Database['public']['Enums']['schedule_cadence'] | ''
   image_url: string
+  hours_of_operation: HoursOfOperationEntry[]
 }
 
 export interface SlotFormState extends Omit<AdminVenueEditorSlot, 'day_of_week'> {

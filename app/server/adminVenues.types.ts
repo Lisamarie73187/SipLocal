@@ -1,5 +1,11 @@
 import type { Database } from '@/types/database'
 
+export interface HoursOfOperationEntry {
+  day: number
+  open: string
+  close: string
+}
+
 export interface AdminVenueListItem {
   id: string
   name: string
@@ -85,6 +91,7 @@ export interface AdminVenueEditorData {
     last_scraped_at: string | null
     schedule_cadence: Database['public']['Enums']['schedule_cadence'] | null
     image_url: string | null
+    hours_of_operation: HoursOfOperationEntry[] | null
   } | null
   slots: AdminVenueEditorSlot[]
   events: AdminVenueEditorEvent[]
