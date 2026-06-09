@@ -58,6 +58,11 @@ export function AdminVenueSuggestionReviewCard({
             {suggestion.created_at ? ` · ${formatSubmittedAt(suggestion.created_at)}` : ''}
           </p>
           <p className="mt-1 text-xs text-secondary">New venue suggestion</p>
+          {suggestion.user_description ? (
+            <p className="mt-2 text-xs text-dark">
+              &ldquo;{suggestion.user_description}&rdquo;
+            </p>
+          ) : null}
           {suggestion.submitter_lat != null && suggestion.submitter_lng != null ? (
             <p className="mt-1 text-xs text-muted-foreground">
               Submitter location:{' '}

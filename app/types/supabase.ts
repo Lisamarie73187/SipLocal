@@ -1,4 +1,4 @@
-(node:59155) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
+(node:60437) ExperimentalWarning: CommonJS module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/debug/src/node.js is loading ES Module /Users/lisaherzberg/.nvm/versions/node/v23.1.0/lib/node_modules/npm/node_modules/supports-color/index.js using require().
 Support for loading ES Module in require() is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
 Initialising login role...
@@ -698,6 +698,7 @@ export type Database = {
           submitter_lat: number | null
           submitter_lng: number | null
           updated_at: string
+          user_description: string | null
           user_id: string
           venue_name: string
         }
@@ -713,6 +714,7 @@ export type Database = {
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string
+          user_description?: string | null
           user_id: string
           venue_name: string
         }
@@ -728,6 +730,7 @@ export type Database = {
           submitter_lat?: number | null
           submitter_lng?: number | null
           updated_at?: string
+          user_description?: string | null
           user_id?: string
           venue_name?: string
         }

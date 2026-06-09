@@ -28,6 +28,7 @@ import type { ParseHappyHourPasteResult, ParsedHappyHourSlot } from '@/utils/par
 const venueSuggestionInputSchema = z.object({
   citySlug: z.string().min(1),
   venueName: z.string().trim().min(2).max(200),
+  userDescription: z.string().trim().max(500).optional(),
   imageBase64: z.string().min(1),
   mediaType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
   submitterLocation: submitterLocationInputSchema.optional(),
@@ -38,6 +39,7 @@ export interface AdminVenueSuggestionItem {
   venue_name: string
   user_id: string
   user_email: string | null
+  user_description: string | null
   status: Database['public']['Enums']['menu_submission_status']
   photo_url: string
   parsed_slots: ParseHappyHourPasteResult | null
@@ -119,6 +121,7 @@ export const submitVenueSuggestion = createServerFn({ method: 'POST' })
         user_id: userId,
         city_id: cityId,
         venue_name: data.venueName.trim(),
+        user_description: data.userDescription?.trim() || null,
         storage_path: storagePath,
         status: 'pending_review',
         parsed_slots: null,
@@ -159,7 +162,7 @@ export const listPendingVenueSuggestions = createServerFn({ method: 'GET' })
     let query = supabase
       .from('venue_suggestions')
       .select(
-        'id, venue_name, user_id, status, storage_path, parsed_slots, submitter_lat, submitter_lng, created_at, city_id',
+        'id, venue_name, user_id, user_description, status, storage_path, parsed_slots, submitter_lat, submitter_lng, created_at, city_id',
       )
       .eq('status', 'pending_review')
       .order('created_at', { ascending: false })
@@ -186,6 +189,7 @@ export const listPendingVenueSuggestions = createServerFn({ method: 'GET' })
         venue_name: row.venue_name,
         user_id: row.user_id,
         user_email: userData.user?.email ?? null,
+        user_description: row.user_description ?? null,
         status: row.status,
         photo_url: photoUrl,
         parsed_slots: parseStoredParsedSlots(row.parsed_slots),

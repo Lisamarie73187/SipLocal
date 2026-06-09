@@ -27,6 +27,7 @@ export function SuggestVenueDialog({ citySlug, open, onOpenChange }: SuggestVenu
     requestLocation,
   } = useUserLocation()
   const [venueName, setVenueName] = useState('')
+  const [userDescription, setUserDescription] = useState('')
   const [photoPayload, setPhotoPayload] = useState<MenuPhotoPayload | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -48,6 +49,7 @@ export function SuggestVenueDialog({ citySlug, open, onOpenChange }: SuggestVenu
 
   const resetForm = (): void => {
     setVenueName('')
+    setUserDescription('')
     setPhotoPayload(null)
     setPreviewUrl(null)
     setError(null)
@@ -99,6 +101,7 @@ export function SuggestVenueDialog({ citySlug, open, onOpenChange }: SuggestVenu
       data: {
         citySlug,
         venueName: trimmedName,
+        userDescription: userDescription.trim() || undefined,
         imageBase64: photoPayload.imageBase64,
         mediaType: photoPayload.mediaType,
         submitterLocation: userLocationToSubmitterInput(userLocation),
@@ -196,6 +199,21 @@ export function SuggestVenueDialog({ citySlug, open, onOpenChange }: SuggestVenu
                   placeholder="e.g. The Lot"
                   className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-base text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   autoComplete="organization"
+                />
+              </label>
+
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-dark">
+                  Comments{' '}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </span>
+                <textarea
+                  value={userDescription}
+                  onChange={(event) => setUserDescription(event.target.value)}
+                  placeholder="Anything helpful — hours, vibe, what you ordered…"
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-base text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </label>
 
