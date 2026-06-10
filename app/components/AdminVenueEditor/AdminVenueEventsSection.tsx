@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Copy, Link2, Loader2, Plus, Trash2 } from 'lucide-react'
+import { Copy, Link2, Loader2, Plus, ShieldCheck, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { EventScrubPanel } from '@/components/EventScrubPanel'
@@ -264,10 +264,26 @@ export function AdminVenueEventsSection({
             public map.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => setEvents((current) => [...current, newEmptyEvent()])}>
-          <Plus className="size-4" />
-          Add event
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={events.length === 0}
+            onClick={() =>
+              setEvents((current) =>
+                current.map((row) => ({ ...row, confidence: 'high', is_published: true })),
+              )
+            }
+          >
+            <ShieldCheck className="size-4" />
+            Mark all high confidence &amp; publish
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setEvents((current) => [...current, newEmptyEvent()])}>
+            <Plus className="size-4" />
+            Add event
+          </Button>
+        </div>
       </div>
 
       <EventScrubPanel
