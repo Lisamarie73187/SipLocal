@@ -90,6 +90,10 @@ export function venueMatchesDiscoveryFilters(
     return true
   }
 
+  if (filters.viewDay === 'any') {
+    return true
+  }
+
   const timeZone = venue.city.timezone
   const placement = getVenueTimelinePlacementForViewDay(
     venue.happy_hour_slots,

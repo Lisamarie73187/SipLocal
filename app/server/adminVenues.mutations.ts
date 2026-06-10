@@ -31,7 +31,7 @@ export const archiveAdminVenues = createServerFn({ method: 'POST' })
     const archivedAt = new Date().toISOString()
     const { data: rows, error } = await supabase
       .from('venues')
-      .update({ archived_at: archivedAt, is_published: false })
+      .update({ archived_at: archivedAt, is_published: false, data_status: 'pending_review' })
       .in('id', data.venueIds)
       .is('archived_at', null)
       .select('id, name')
@@ -41,6 +41,28 @@ export const archiveAdminVenues = createServerFn({ method: 'POST' })
     }
 
     const updated = rows ?? []
+    const updatedIds = updated.map((row) => row.id)
+
+    if (updatedIds.length > 0) {
+      const { error: eventsError } = await supabase
+        .from('events')
+        .update({ is_published: false })
+        .in('venue_id', updatedIds)
+
+      if (eventsError) {
+        throw eventsError
+      }
+
+      const { error: slotsError } = await supabase
+        .from('happy_hour_slots')
+        .update({ is_active: false, data_status: 'pending_review' })
+        .in('venue_id', updatedIds)
+
+      if (slotsError) {
+        throw slotsError
+      }
+    }
+
     return {
       archivedCount: updated.length,
       venueNames: updated.map((row) => row.name),

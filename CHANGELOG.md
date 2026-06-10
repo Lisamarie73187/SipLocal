@@ -12,6 +12,8 @@ User-requested changes, newest first.
 
 ## Done
 
+- **Archive cascade** — archiving a venue now also unpublishes its events, sets its happy hour slots to inactive/pending review, and marks the venue's data status as pending review.
+- **"Any day" filter shows all venues** — venues with no happy hour today (or no slots at all) now appear in a "More venues" section instead of being hidden when the day filter is set to "Any day".
 - **Venue scrub: short description** — AI instructed to keep description to one sentence, 150 chars max, no em dashes.
 - **Venue scrub: sub-page fetch for hours of operation** — `scrubVenueInfo` now also fetches `/hours`, `/contact`, `/about`, `/location`, `/visit`, `/find-us` and combines the text before sending to AI, so hours on a separate page are captured.
 - **Hours of operation paste parser** — text area above the hours grid in the venue editor; paste any format and click "Parse hours" to auto-fill the day rows.

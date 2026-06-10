@@ -86,7 +86,7 @@ export function useHappyHourTimeline(
   const searchQuery = filters.search.trim()
   const sections = useMemo(() => {
     const sectionMap = new Map<string, TimelineSection>()
-    const searchOnlyEntries: TimelineVenueEntry[] = []
+    const fallbackEntries: TimelineVenueEntry[] = []
 
     for (const venue of filteredVenues) {
       const placement =
@@ -113,8 +113,8 @@ export function useHappyHourTimeline(
           : '—'
 
       if (!placement) {
-        if (searchQuery) {
-          searchOnlyEntries.push({
+        if (searchQuery || filters.viewDay === 'any') {
+          fallbackEntries.push({
             venue,
             distanceLabel,
             hhWindow: '',
@@ -123,7 +123,7 @@ export function useHappyHourTimeline(
                 ? getDealSummaryForSlot(venue.happy_hour_slots, venue.happy_hour_slots[0])
                 : '',
             badgeTone: 'scheduled',
-            badgeLabel: 'Search match',
+            badgeLabel: searchQuery ? 'Search match' : 'No happy hour today',
             emphasis: false,
           })
         }
@@ -156,15 +156,20 @@ export function useHappyHourTimeline(
 
     const sorted = [...sectionMap.values()].sort((a, b) => a.sortKey - b.sortKey)
 
-    if (searchOnlyEntries.length > 0) {
-      searchOnlyEntries.sort((a, b) => a.venue.name.localeCompare(b.venue.name))
-      sorted.unshift({
-        id: 'search_results',
-        title: 'Search results',
-        sortKey: -1,
+    if (fallbackEntries.length > 0) {
+      fallbackEntries.sort((a, b) => a.venue.name.localeCompare(b.venue.name))
+      const fallbackSection: TimelineSection = {
+        id: searchQuery ? 'search_results' : 'more_venues',
+        title: searchQuery ? 'Search results' : 'More venues',
+        sortKey: searchQuery ? -1 : 100_000,
         emphasis: false,
-        entries: searchOnlyEntries,
-      })
+        entries: fallbackEntries,
+      }
+      if (searchQuery) {
+        sorted.unshift(fallbackSection)
+      } else {
+        sorted.push(fallbackSection)
+      }
     }
 
     for (const section of sorted) {

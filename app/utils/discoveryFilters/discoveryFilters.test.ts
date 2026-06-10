@@ -124,9 +124,25 @@ describe('discoveryFilters default visibility', () => {
     expect(matches).toBe(true)
   })
 
-  it('excludes venues with no happy hour placement for the viewed day', () => {
+  it('includes venues with no happy hour placement for today when viewing "any" day', () => {
     const testVenue = venue([slot({ day_of_week: 2, start_time: '16:00', end_time: '18:00' })])
     const matches = venueMatchesDiscoveryFilters(testVenue, DEFAULT_FILTERS, mondaySevenPm)
+    expect(matches).toBe(true)
+  })
+
+  it('includes venues with no happy hour slots at all when viewing "any" day', () => {
+    const testVenue = venue([])
+    const matches = venueMatchesDiscoveryFilters(testVenue, DEFAULT_FILTERS, mondaySevenPm)
+    expect(matches).toBe(true)
+  })
+
+  it('excludes venues with no happy hour placement for a specific viewed day', () => {
+    const testVenue = venue([slot({ day_of_week: 2, start_time: '16:00', end_time: '18:00' })])
+    const matches = venueMatchesDiscoveryFilters(
+      testVenue,
+      { ...DEFAULT_FILTERS, viewDay: 1 },
+      mondaySevenPm,
+    )
     expect(matches).toBe(false)
   })
 })
