@@ -12,6 +12,7 @@ User-requested changes, newest first.
 
 ## Done
 
+- **Image URL field in venue editor** — view, edit, and preview a venue's cover image (`image_url`) directly in the venue editor.
 - **Venue scrub pulls a cover photo from Google Places** — if a venue has no `image_url`, scrubbing now downloads a Google Place photo, uploads it to a public `venue-images` storage bucket, and sets it as the venue's image.
 - **Bulk-mark events high confidence & publish** — button in the venue editor's Events section sets confidence to "high" and publishes all events at once (still requires "Save events" to persist).
 - **Archive cascade** — archiving a venue now also unpublishes its events, sets its happy hour slots to inactive/pending review, and marks the venue's data status as pending review.

@@ -59,6 +59,7 @@ function venueToFormState(
     lng: String(venue.lng),
     phone: venue.phone ?? '',
     website_url: venue.website_url ?? '',
+    image_url: venue.image_url ?? '',
     description: venue.description ?? '',
     admin_notes: venue.admin_notes ?? '',
     hours_of_operation: venue.hours_of_operation ?? [],
@@ -596,6 +597,25 @@ export function AdminVenueEditor({
           sourceUrls={editorSourceUrls}
           className="rounded-xl border border-border/70 bg-background/60 px-3 py-3"
         />
+
+        <label className="block space-y-2">
+          <span className={labelClassName}>Image URL</span>
+          <input
+            type="url"
+            value={venue.image_url}
+            onChange={(event) => updateVenue({ image_url: event.target.value })}
+            placeholder="https://"
+            className={inputClassName}
+          />
+        </label>
+
+        {venue.image_url.trim() ? (
+          <img
+            src={venue.image_url.trim()}
+            alt=""
+            className="h-32 w-full rounded-xl border border-border/70 object-cover"
+          />
+        ) : null}
 
         <label className="block space-y-2">
           <span className={labelClassName}>Description / notes</span>
