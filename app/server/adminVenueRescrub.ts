@@ -4,11 +4,13 @@ import { z } from 'zod'
 import { AdminAuthError, requireAdmin } from '@/lib/adminAuth.server'
 import { getAnthropicApiKey, getAnthropicHappyHourModel } from '@/lib/scrape/anthropicConfig'
 import { fetchPageText, fetchPageTextWithSubPages } from '@/lib/scrape/fetchPageText'
-import { getGooglePlaceById } from '@/lib/scrape/googlePlaces'
+import { fetchGooglePlacePhoto, getGooglePlaceById } from '@/lib/scrape/googlePlaces'
 import { parseEventsFromPageText } from '@/lib/scrape/parseEventsWithAnthropic'
 import { parseHappyHourPasteSmart } from '@/lib/scrape/parseHappyHourWithAnthropic'
 import { createSupabaseServiceClient } from '@/lib/supabaseService'
+import { uploadVenueImageToStorage } from '@/lib/venueImageStorage'
 import { mapGooglePriceLevel } from '@/utils/googlePriceLevel'
+import { isMenuPhotoMediaType } from '@/utils/menuPhotoFile'
 import type { ParsedEvent } from '@/lib/scrape/parseEventsWithAnthropic'
 import type { ParsedHappyHourSlot } from '@/utils/parseHappyHourPaste'
 import type { Database } from '@/types/database'
@@ -216,7 +218,7 @@ async function getVenueForScrub(venueId: string) {
   const supabase = createSupabaseServiceClient()
   const { data: venue, error } = await supabase
     .from('venues')
-    .select('id, website_url, place_id')
+    .select('id, website_url, place_id, image_url')
     .eq('id', venueId)
     .single()
 
@@ -224,6 +226,31 @@ async function getVenueForScrub(venueId: string) {
     throw error ?? new Error('Venue not found.')
   }
   return venue
+}
+
+async function fetchVenueImageFromGooglePlace(
+  venueId: string,
+  photoResourceNames: string[],
+): Promise<string | null> {
+  for (const photoResourceName of photoResourceNames) {
+    const photo = await fetchGooglePlacePhoto(photoResourceName)
+    if (!photo || !isMenuPhotoMediaType(photo.mediaType)) {
+      continue
+    }
+
+    try {
+      const supabase = createSupabaseServiceClient()
+      return await uploadVenueImageToStorage(supabase, {
+        venueId,
+        imageBase64: photo.imageBase64,
+        mediaType: photo.mediaType,
+      })
+    } catch (error) {
+      logger.error('Failed to upload venue image from Google Places', error, { venueId })
+    }
+  }
+
+  return null
 }
 
 export const scrubVenueInfo = createServerFn({ method: 'POST' })
@@ -241,6 +268,26 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
       const pageText = await fetchPageTextWithSubPages(venue.website_url)
       const info = await parseVenueInfoFromText(pageText)
       const fieldsUpdated = await applyVenueInfoToDb(data.venueId, info)
+
+      if (!venue.image_url && venue.place_id) {
+        const place = await getGooglePlaceById(venue.place_id)
+        if (place && place.photoResourceNames.length > 0) {
+          const imageUrl = await fetchVenueImageFromGooglePlace(
+            data.venueId,
+            place.photoResourceNames,
+          )
+          if (imageUrl) {
+            const supabase = createSupabaseServiceClient()
+            const { error } = await supabase
+              .from('venues')
+              .update({ image_url: imageUrl })
+              .eq('id', data.venueId)
+            if (error) throw error
+            fieldsUpdated.push('image_url')
+          }
+        }
+      }
+
       return { venueId: data.venueId, source: 'website', fieldsUpdated }
     }
 
@@ -263,6 +310,17 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
       if (place.googlePriceLevel !== null) {
         patch.price_level = mapGooglePriceLevel(place.googlePriceLevel)
         fieldsUpdated.push('price_level')
+      }
+
+      if (!venue.image_url && place.photoResourceNames.length > 0) {
+        const imageUrl = await fetchVenueImageFromGooglePlace(
+          data.venueId,
+          place.photoResourceNames,
+        )
+        if (imageUrl) {
+          patch.image_url = imageUrl
+          fieldsUpdated.push('image_url')
+        }
       }
 
       const { error } = await supabase.from('venues').update(patch).eq('id', data.venueId)

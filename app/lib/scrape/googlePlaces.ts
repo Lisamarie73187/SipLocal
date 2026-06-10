@@ -372,6 +372,42 @@ export async function getGooglePlaceById(placeId: string): Promise<GooglePlaceVe
   return mapPlace(raw)
 }
 
+export interface GooglePlacePhoto {
+  imageBase64: string
+  mediaType: string
+}
+
+/**
+ * Fetches a Google Place photo's image bytes via the Photo Media API.
+ * `photoResourceName` is one of `GooglePlaceVenue.photoResourceNames`
+ * (format: `places/{placeId}/photos/{photoId}`).
+ */
+export async function fetchGooglePlacePhoto(
+  photoResourceName: string,
+  maxWidthPx = 1200,
+): Promise<GooglePlacePhoto | null> {
+  const apiKey = getGooglePlacesApiKey()
+
+  const response = await fetch(
+    `https://places.googleapis.com/v1/${photoResourceName}/media?maxWidthPx=${maxWidthPx}&key=${apiKey}`,
+  )
+
+  if (!response.ok) {
+    return null
+  }
+
+  const contentType = response.headers.get('content-type') ?? ''
+  if (!contentType.startsWith('image/')) {
+    return null
+  }
+
+  const buffer = await response.arrayBuffer()
+  return {
+    imageBase64: Buffer.from(buffer).toString('base64'),
+    mediaType: contentType,
+  }
+}
+
 export async function fetchVenuesFromGoogle(
   options: GooglePlacesSearchOptions,
 ): Promise<GooglePlaceVenue[]> {
