@@ -193,6 +193,8 @@ Rules:
 
 const URL_USER_PROMPT_PREFIX = `Extract every upcoming event from this venue page text:\n\n`
 
+const PASTE_USER_PROMPT_PREFIX = `Extract every event described in this text (notes, social media posts, emails, or a calendar pasted by a venue admin):\n\n`
+
 const IMAGE_USER_PROMPT = `Extract every event listed in this photo (flyer, poster, calendar, or board). Read all text carefully — titles, dates or days of week, and times.`
 
 type AnthropicContentBlock =
@@ -256,6 +258,10 @@ async function callAnthropic(content: AnthropicContentBlock[]): Promise<ParseEve
 
 export async function parseEventsFromPageText(pageText: string): Promise<ParseEventsResult> {
   return callAnthropic([{ type: 'text', text: `${URL_USER_PROMPT_PREFIX}${pageText.trim()}` }])
+}
+
+export async function parseEventsFromPasteText(pasteText: string): Promise<ParseEventsResult> {
+  return callAnthropic([{ type: 'text', text: `${PASTE_USER_PROMPT_PREFIX}${pasteText.trim()}` }])
 }
 
 export async function parseEventsFromPhoto(

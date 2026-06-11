@@ -5,6 +5,7 @@ import { AdminAuthError, requireAdmin } from '@/lib/adminAuth.server'
 import { fetchPageText } from '@/lib/scrape/fetchPageText'
 import {
   parseEventsFromPageText,
+  parseEventsFromPasteText,
   parseEventsFromPhoto,
   type ParseEventsResult,
 } from '@/lib/scrape/parseEventsWithAnthropic'
@@ -33,6 +34,22 @@ export const scrubEventsFromUrl = createServerFn({ method: 'POST' })
     const pageText = await fetchPageText(data.sourceUrl)
     const result = await parseEventsFromPageText(pageText)
     return { ...result, sourceUrl: data.sourceUrl }
+  })
+
+export const parseEventsFromPaste = createServerFn({ method: 'POST' })
+  .inputValidator(
+    z.object({
+      pasteText: z.string().min(1),
+    }),
+  )
+  .handler(async ({ data }): Promise<ParseEventsResult> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    return parseEventsFromPasteText(data.pasteText)
   })
 
 export const scrubEventsFromPhoto = createServerFn({ method: 'POST' })

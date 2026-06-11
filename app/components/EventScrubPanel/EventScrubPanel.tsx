@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
-import { Camera, ImagePlus, Link2, Loader2, Sparkles } from 'lucide-react'
+import { Camera, ImagePlus, Link2, Loader2, Sparkles, Type } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { scrubEventsFromPhoto, scrubEventsFromUrl } from '@/server/adminEventScrub'
+import { parseEventsFromPaste, scrubEventsFromPhoto, scrubEventsFromUrl } from '@/server/adminEventScrub'
 import type { ParsedEvent } from '@/lib/scrape/parseEventsWithAnthropic'
 import { readMenuPhotoFile, type MenuPhotoPayload } from '@/utils/menuPhotoFile'
 import { getEventTypeLabel } from '@/utils/eventType'
@@ -12,6 +12,9 @@ import { cn } from '@/utils'
 
 const inputClassName =
   'h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-base text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20'
+
+const textareaClassName =
+  'min-h-32 w-full rounded-xl border border-border/70 bg-background px-3 py-2 text-base text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20'
 
 export interface EventScrubPanelProps {
   onAdd: (events: ParsedEvent[], sourceUrl: string | null) => void | Promise<void>
@@ -34,6 +37,7 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
   const [sourceUrl, setSourceUrl] = useState('')
   const [photoPayload, setPhotoPayload] = useState<MenuPhotoPayload | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
+  const [pasteText, setPasteText] = useState('')
 
   const [found, setFound] = useState<ParsedEvent[] | null>(null)
   const [foundSourceUrl, setFoundSourceUrl] = useState<string | null>(null)
@@ -106,6 +110,24 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
       .finally(() => setScrubbing(false))
   }
 
+  const handleParsePaste = (): void => {
+    const trimmed = pasteText.trim()
+    if (!trimmed) {
+      setError('Paste some event info first.')
+      return
+    }
+
+    setScrubbing(true)
+    resetResults()
+
+    void parseEventsFromPaste({ data: { pasteText: trimmed } })
+      .then((result) => applyResult(result, null))
+      .catch((parseError) => {
+        setError(parseError instanceof Error ? parseError.message : 'Could not parse that text.')
+      })
+      .finally(() => setScrubbing(false))
+  }
+
   const handleScrubPhoto = (): void => {
     if (!photoPayload) {
       setError('Choose a photo first.')
@@ -158,6 +180,7 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
         setSourceUrl('')
         setPhotoPayload(null)
         setPhotoPreviewUrl(null)
+        setPasteText('')
       })
       .catch((addError) => {
         setError(addError instanceof Error ? addError.message : 'Could not add events.')
@@ -170,8 +193,8 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
       <div>
         <p className="text-sm font-medium text-dark">Scrub events from a source</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Paste a link to the venue's events page or upload a photo of a flyer or calendar — AI
-          will pull out individual events for you to review and add.
+          Paste a link to the venue's events page, upload a photo of a flyer or calendar, or paste
+          event details directly — AI will pull out individual events for you to review and add.
         </p>
       </div>
 
@@ -246,6 +269,29 @@ export function EventScrubPanel({ onAdd }: EventScrubPanelProps) {
             className="max-h-56 w-full rounded-xl border border-border/70 object-contain bg-muted/30"
           />
         ) : null}
+      </div>
+
+      <div className="space-y-2 border-t border-border/60 pt-3">
+        <label className="block space-y-2">
+          <span className="text-sm font-medium text-dark">Or paste event info</span>
+          <textarea
+            value={pasteText}
+            onChange={(change) => setPasteText(change.target.value)}
+            className={textareaClassName}
+            placeholder={'Trivia Night every Tuesday 7-9pm\nLive music Saturday 6/14 at 8pm with The Locals'}
+          />
+        </label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="min-h-11"
+          disabled={busy || !pasteText.trim()}
+          onClick={handleParsePaste}
+        >
+          {scrubbing ? <Loader2 className="size-4 animate-spin" /> : <Type className="size-4" />}
+          Parse with AI
+        </Button>
       </div>
 
       {found && found.length > 0 ? (
