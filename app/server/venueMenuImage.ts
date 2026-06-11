@@ -3,7 +3,6 @@ import { z } from 'zod'
 
 import { AdminAuthError, requireAdmin } from '@/lib/adminAuth.server'
 import {
-  buildMenuPhotoStoragePath,
   createSignedMenuPhotoUrl,
   deleteMenuPhotoFromStorage,
   uploadMenuPhotoToStorage,
@@ -16,48 +15,76 @@ function toAuthError(error: unknown): Error {
   return error instanceof Error ? error : new Error('Unexpected error')
 }
 
-export const getVenueHappyHourMenuImage = createServerFn({ method: 'GET' })
+export interface VenueMenuImageItem {
+  id: string
+  url: string
+}
+
+export const getVenueHappyHourMenuImages = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ venueId: z.string().uuid() }))
-  .handler(async ({ data }): Promise<{ url: string | null }> => {
+  .handler(async ({ data }): Promise<{ images: VenueMenuImageItem[] }> => {
     const supabase = createSupabaseServiceClient()
 
     const { data: venue, error: venueError } = await supabase
       .from('venues')
-      .select('id, is_published, archived_at, happy_hour_menu_storage_path, happy_hour_menu_url')
+      .select('id, is_published, archived_at')
       .eq('id', data.venueId)
       .maybeSingle()
 
     if (venueError || !venue || !venue.is_published || venue.archived_at) {
-      return { url: null }
+      return { images: [] }
     }
 
-    if (venue.happy_hour_menu_storage_path) {
-      const url = await createSignedMenuPhotoUrl(supabase, venue.happy_hour_menu_storage_path)
-      return { url }
-    }
-
-    if (venue.happy_hour_menu_url) {
-      return { url: venue.happy_hour_menu_url }
-    }
-
-    const { data: submission, error: submissionError } = await supabase
-      .from('venue_menu_submissions')
-      .select('storage_path')
+    const { data: rows, error: imagesError } = await supabase
+      .from('venue_menu_images')
+      .select('id, storage_path')
       .eq('venue_id', data.venueId)
-      .eq('status', 'approved')
-      .order('reviewed_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .order('position', { ascending: true })
 
-    if (submissionError || !submission) {
-      return { url: null }
+    if (imagesError || !rows) {
+      return { images: [] }
     }
 
-    const url = await createSignedMenuPhotoUrl(supabase, submission.storage_path)
-    return { url }
+    const images = await Promise.all(
+      rows.map(async (row) => ({
+        id: row.id,
+        url: await createSignedMenuPhotoUrl(supabase, row.storage_path),
+      })),
+    )
+
+    return { images }
   })
 
-export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
+export const getAdminVenueMenuImages = createServerFn({ method: 'GET' })
+  .inputValidator(z.object({ venueId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ images: VenueMenuImageItem[] }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { data: rows, error: imagesError } = await supabase
+      .from('venue_menu_images')
+      .select('id, storage_path')
+      .eq('venue_id', data.venueId)
+      .order('position', { ascending: true })
+
+    if (imagesError) throw imagesError
+
+    const images = await Promise.all(
+      (rows ?? []).map(async (row) => ({
+        id: row.id,
+        url: await createSignedMenuPhotoUrl(supabase, row.storage_path),
+      })),
+    )
+
+    return { images }
+  })
+
+export const addVenueMenuPhoto = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
       venueId: z.string().uuid(),
@@ -65,7 +92,7 @@ export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
       mediaType: z.string().min(1),
     }),
   )
-  .handler(async ({ data }): Promise<{ storagePath: string }> => {
+  .handler(async ({ data }): Promise<{ id: string; url: string }> => {
     try {
       await requireAdmin()
     } catch (error) {
@@ -77,17 +104,16 @@ export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
     }
 
     const mediaType = data.mediaType as MenuPhotoMediaType
-    const submissionId = `admin-${Date.now()}`
     const supabase = createSupabaseServiceClient()
 
-    const { data: existingVenue, error: fetchError } = await supabase
-      .from('venues')
-      .select('happy_hour_menu_storage_path')
-      .eq('id', data.venueId)
-      .maybeSingle()
+    const { count: existingCount, error: countError } = await supabase
+      .from('venue_menu_images')
+      .select('id', { count: 'exact', head: true })
+      .eq('venue_id', data.venueId)
 
-    if (fetchError) throw fetchError
+    if (countError) throw countError
 
+    const submissionId = `admin-${Date.now()}`
     const storagePath = await uploadMenuPhotoToStorage(supabase, {
       venueId: data.venueId,
       submissionId,
@@ -95,28 +121,79 @@ export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
       mediaType,
     })
 
-    const { error } = await supabase
-      .from('venues')
-      .update({
-        happy_hour_menu_storage_path: storagePath,
-        happy_hour_menu_url: null,
+    const { data: inserted, error } = await supabase
+      .from('venue_menu_images')
+      .insert({
+        venue_id: data.venueId,
+        storage_path: storagePath,
+        position: existingCount ?? 0,
       })
-      .eq('id', data.venueId)
+      .select('id')
+      .single()
 
-    if (error) throw error
-
-    if (existingVenue?.happy_hour_menu_storage_path) {
-      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
+    if (error || !inserted) {
+      await deleteMenuPhotoFromStorage(supabase, storagePath)
+      throw error ?? new Error('Failed to save menu photo.')
     }
 
-    return { storagePath }
+    const url = await createSignedMenuPhotoUrl(supabase, storagePath)
+
+    return { id: inserted.id, url }
   })
 
-export const setVenueMenuPhotoUrl = createServerFn({ method: 'POST' })
+export const deleteVenueMenuPhoto = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ venueId: z.string().uuid(), imageId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { data: image, error: fetchError } = await supabase
+      .from('venue_menu_images')
+      .select('id, storage_path')
+      .eq('id', data.imageId)
+      .eq('venue_id', data.venueId)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+    if (!image) throw new Error('Menu photo not found.')
+
+    const { error: deleteError } = await supabase
+      .from('venue_menu_images')
+      .delete()
+      .eq('id', image.id)
+
+    if (deleteError) throw deleteError
+
+    await deleteMenuPhotoFromStorage(supabase, image.storage_path)
+
+    const { data: remaining, error: remainingError } = await supabase
+      .from('venue_menu_images')
+      .select('id')
+      .eq('venue_id', data.venueId)
+      .order('position', { ascending: true })
+
+    if (remainingError) throw remainingError
+
+    for (let i = 0; i < (remaining ?? []).length; i++) {
+      await supabase
+        .from('venue_menu_images')
+        .update({ position: i })
+        .eq('id', remaining![i].id)
+    }
+
+    return { ok: true }
+  })
+
+export const reorderVenueMenuPhotos = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
       venueId: z.string().uuid(),
-      url: z.string().url(),
+      imageIds: z.array(z.string().uuid()).min(1),
     }),
   )
   .handler(async ({ data }): Promise<{ ok: true }> => {
@@ -128,71 +205,26 @@ export const setVenueMenuPhotoUrl = createServerFn({ method: 'POST' })
 
     const supabase = createSupabaseServiceClient()
 
-    const { data: existingVenue, error: fetchError } = await supabase
-      .from('venues')
-      .select('happy_hour_menu_storage_path')
-      .eq('id', data.venueId)
-      .maybeSingle()
-
-    if (fetchError) throw fetchError
-
-    const { error } = await supabase
-      .from('venues')
-      .update({
-        happy_hour_menu_url: data.url,
-        happy_hour_menu_storage_path: null,
-      })
-      .eq('id', data.venueId)
-
-    if (error) throw error
-
-    if (existingVenue?.happy_hour_menu_storage_path) {
-      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
-    }
-
-    return { ok: true }
-  })
-
-export const clearVenueMenuPhoto = createServerFn({ method: 'POST' })
-  .inputValidator(z.object({ venueId: z.string().uuid() }))
-  .handler(async ({ data }): Promise<{ ok: true }> => {
-    try {
-      await requireAdmin()
-    } catch (error) {
-      throw toAuthError(error)
-    }
-
-    const supabase = createSupabaseServiceClient()
-
-    const { data: existingVenue, error: fetchError } = await supabase
-      .from('venues')
-      .select('happy_hour_menu_storage_path')
-      .eq('id', data.venueId)
-      .maybeSingle()
-
-    if (fetchError) throw fetchError
-
-    const { error } = await supabase
-      .from('venues')
-      .update({
-        happy_hour_menu_storage_path: null,
-        happy_hour_menu_url: null,
-      })
-      .eq('id', data.venueId)
-
-    if (error) throw error
-
-    if (existingVenue?.happy_hour_menu_storage_path) {
-      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
-    }
-
-    const { error: submissionError } = await supabase
-      .from('venue_menu_submissions')
-      .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
+    const { data: rows, error: fetchError } = await supabase
+      .from('venue_menu_images')
+      .select('id')
       .eq('venue_id', data.venueId)
-      .eq('status', 'approved')
 
-    if (submissionError) throw submissionError
+    if (fetchError) throw fetchError
+
+    const validIds = new Set((rows ?? []).map((row) => row.id))
+    if (data.imageIds.length !== validIds.size || !data.imageIds.every((id) => validIds.has(id))) {
+      throw new Error('Image list does not match this venue.')
+    }
+
+    for (let i = 0; i < data.imageIds.length; i++) {
+      const { error } = await supabase
+        .from('venue_menu_images')
+        .update({ position: i })
+        .eq('id', data.imageIds[i])
+
+      if (error) throw error
+    }
 
     return { ok: true }
   })

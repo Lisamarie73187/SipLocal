@@ -625,6 +625,38 @@ export type Database = {
           },
         ]
       }
+      venue_menu_images: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          storage_path: string
+          venue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          storage_path: string
+          venue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          storage_path?: string
+          venue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_menu_images_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venue_menu_submissions: {
         Row: {
           created_at: string
@@ -752,8 +784,6 @@ export type Database = {
           data_status: Database["public"]["Enums"]["venue_data_status"]
           description: string | null
           featured_until: string | null
-          happy_hour_menu_storage_path: string | null
-          happy_hour_menu_url: string | null
           hours_of_operation: Json | null
           id: string
           image_url: string | null
@@ -794,8 +824,6 @@ export type Database = {
           data_status?: Database["public"]["Enums"]["venue_data_status"]
           description?: string | null
           featured_until?: string | null
-          happy_hour_menu_storage_path?: string | null
-          happy_hour_menu_url?: string | null
           hours_of_operation?: Json | null
           id?: string
           image_url?: string | null
@@ -836,8 +864,6 @@ export type Database = {
           data_status?: Database["public"]["Enums"]["venue_data_status"]
           description?: string | null
           featured_until?: string | null
-          happy_hour_menu_storage_path?: string | null
-          happy_hour_menu_url?: string | null
           hours_of_operation?: Json | null
           id?: string
           image_url?: string | null

@@ -34,8 +34,6 @@ export interface VenueFormState {
   schedule_cadence: Database['public']['Enums']['schedule_cadence'] | ''
   image_url: string
   hours_of_operation: HoursOfOperationEntry[]
-  happy_hour_menu_storage_path: string | null
-  happy_hour_menu_url: string | null
 }
 
 export interface SlotFormState extends Omit<AdminVenueEditorSlot, 'day_of_week'> {

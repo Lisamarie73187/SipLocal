@@ -70,8 +70,6 @@ function venueToFormState(
     community_verified_at: venue.community_verified_at ?? '',
     last_scraped_at: venue.last_scraped_at ?? '',
     schedule_cadence: venue.schedule_cadence ?? '',
-    happy_hour_menu_storage_path: venue.happy_hour_menu_storage_path ?? null,
-    happy_hour_menu_url: venue.happy_hour_menu_url ?? null,
   }
 }
 
@@ -329,7 +327,6 @@ export function AdminVenueEditor({
             description: venue.description || null,
             admin_notes: venue.admin_notes || null,
             hours_of_operation: venue.hours_of_operation.length > 0 ? venue.hours_of_operation : null,
-            happy_hour_menu_url: venue.happy_hour_menu_url || null,
             image_url: venue.image_url || null,
             price_level: venue.price_level,
             data_status: venue.data_status,

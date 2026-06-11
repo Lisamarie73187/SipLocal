@@ -750,13 +750,29 @@ export const approveVenueMenuSubmission = createServerFn({ method: 'POST' })
       throw updateError
     }
 
-    const { error: venueMenuError } = await supabase
+    const { error: venueVerifiedError } = await supabase
       .from('venues')
-      .update({
-        happy_hour_menu_storage_path: submission.storage_path,
-        last_verified_at: new Date().toISOString(),
-      })
+      .update({ last_verified_at: new Date().toISOString() })
       .eq('id', submission.venue_id)
+
+    if (venueVerifiedError) {
+      throw venueVerifiedError
+    }
+
+    const { count: existingImageCount, error: countError } = await supabase
+      .from('venue_menu_images')
+      .select('id', { count: 'exact', head: true })
+      .eq('venue_id', submission.venue_id)
+
+    if (countError) {
+      throw countError
+    }
+
+    const { error: venueMenuError } = await supabase.from('venue_menu_images').insert({
+      venue_id: submission.venue_id,
+      storage_path: submission.storage_path,
+      position: existingImageCount ?? 0,
+    })
 
     if (venueMenuError) {
       throw venueMenuError
@@ -809,21 +825,7 @@ export const rejectVenueMenuSubmission = createServerFn({ method: 'POST' })
       throw loadError ?? new Error('Submission not found or already reviewed.')
     }
 
-    const { data: venue, error: venueError } = await supabase
-      .from('venues')
-      .select('happy_hour_menu_storage_path')
-      .eq('id', submission.venue_id)
-      .single()
-
-    if (venueError) {
-      throw venueError
-    }
-
-    const isActiveVenueMenu = venue?.happy_hour_menu_storage_path === submission.storage_path
-
-    if (!isActiveVenueMenu) {
-      await deleteMenuPhotoFromStorage(supabase, submission.storage_path)
-    }
+    await deleteMenuPhotoFromStorage(supabase, submission.storage_path)
 
     const { error: deleteError } = await supabase
       .from('venue_menu_submissions')

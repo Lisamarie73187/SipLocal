@@ -399,13 +399,25 @@ export const approveVenueSuggestion = createServerFn({ method: 'POST' })
       throw updateError
     }
 
-    const { error: venueMenuError } = await supabase
-      .from('venues')
-      .update({ happy_hour_menu_storage_path: suggestion.storage_path })
-      .eq('id', targetVenueId)
+    if (suggestion.storage_path) {
+      const { count: existingImageCount, error: countError } = await supabase
+        .from('venue_menu_images')
+        .select('id', { count: 'exact', head: true })
+        .eq('venue_id', targetVenueId)
 
-    if (venueMenuError) {
-      throw venueMenuError
+      if (countError) {
+        throw countError
+      }
+
+      const { error: venueMenuError } = await supabase.from('venue_menu_images').insert({
+        venue_id: targetVenueId,
+        storage_path: suggestion.storage_path,
+        position: existingImageCount ?? 0,
+      })
+
+      if (venueMenuError) {
+        throw venueMenuError
+      }
     }
 
     const actionLabel =

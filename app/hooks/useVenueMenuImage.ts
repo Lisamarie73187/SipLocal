@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { getVenueHappyHourMenuImage } from '@/server/venueMenuImage'
+import {
+  getAdminVenueMenuImages,
+  getVenueHappyHourMenuImages,
+  type VenueMenuImageItem,
+} from '@/server/venueMenuImage'
 
-export interface UseVenueMenuImageResult {
-  menuImageUrl: string | null
+export interface UseVenueMenuImagesResult {
+  images: VenueMenuImageItem[]
   loading: boolean
   reload: () => Promise<void>
 }
 
-export function useVenueMenuImage(venueId: string): UseVenueMenuImageResult {
-  const [menuImageUrl, setMenuImageUrl] = useState<string | null>(null)
+function useVenueMenuImagesBase(venueId: string, scope: 'public' | 'admin'): UseVenueMenuImagesResult {
+  const [images, setImages] = useState<VenueMenuImageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [tick, setTick] = useState(0)
 
@@ -17,15 +21,20 @@ export function useVenueMenuImage(venueId: string): UseVenueMenuImageResult {
     let cancelled = false
     setLoading(true)
 
-    void getVenueHappyHourMenuImage({ data: { venueId } })
+    const fetcher =
+      scope === 'admin'
+        ? getAdminVenueMenuImages({ data: { venueId } })
+        : getVenueHappyHourMenuImages({ data: { venueId } })
+
+    void fetcher
       .then((result) => {
         if (!cancelled) {
-          setMenuImageUrl(result.url)
+          setImages(result.images)
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setMenuImageUrl(null)
+          setImages([])
         }
       })
       .finally(() => {
@@ -37,11 +46,19 @@ export function useVenueMenuImage(venueId: string): UseVenueMenuImageResult {
     return () => {
       cancelled = true
     }
-  }, [venueId, tick])
+  }, [venueId, tick, scope])
 
   const reload = useCallback(async (): Promise<void> => {
     setTick((n) => n + 1)
   }, [])
 
-  return { menuImageUrl, loading, reload }
+  return { images, loading, reload }
+}
+
+export function useVenueMenuImages(venueId: string): UseVenueMenuImagesResult {
+  return useVenueMenuImagesBase(venueId, 'public')
+}
+
+export function useAdminVenueMenuImages(venueId: string): UseVenueMenuImagesResult {
+  return useVenueMenuImagesBase(venueId, 'admin')
 }
