@@ -5,6 +5,7 @@ import { AdminAuthError, requireAdmin } from '@/lib/adminAuth.server'
 import {
   buildMenuPhotoStoragePath,
   createSignedMenuPhotoUrl,
+  deleteMenuPhotoFromStorage,
   uploadMenuPhotoToStorage,
 } from '@/lib/menuPhotoStorage'
 import { createSupabaseServiceClient } from '@/lib/supabaseService'
@@ -79,6 +80,14 @@ export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
     const submissionId = `admin-${Date.now()}`
     const supabase = createSupabaseServiceClient()
 
+    const { data: existingVenue, error: fetchError } = await supabase
+      .from('venues')
+      .select('happy_hour_menu_storage_path')
+      .eq('id', data.venueId)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+
     const storagePath = await uploadMenuPhotoToStorage(supabase, {
       venueId: data.venueId,
       submissionId,
@@ -95,6 +104,10 @@ export const setVenueMenuPhoto = createServerFn({ method: 'POST' })
       .eq('id', data.venueId)
 
     if (error) throw error
+
+    if (existingVenue?.happy_hour_menu_storage_path) {
+      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
+    }
 
     return { storagePath }
   })
@@ -115,6 +128,14 @@ export const setVenueMenuPhotoUrl = createServerFn({ method: 'POST' })
 
     const supabase = createSupabaseServiceClient()
 
+    const { data: existingVenue, error: fetchError } = await supabase
+      .from('venues')
+      .select('happy_hour_menu_storage_path')
+      .eq('id', data.venueId)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+
     const { error } = await supabase
       .from('venues')
       .update({
@@ -124,6 +145,10 @@ export const setVenueMenuPhotoUrl = createServerFn({ method: 'POST' })
       .eq('id', data.venueId)
 
     if (error) throw error
+
+    if (existingVenue?.happy_hour_menu_storage_path) {
+      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
+    }
 
     return { ok: true }
   })
@@ -139,6 +164,14 @@ export const clearVenueMenuPhoto = createServerFn({ method: 'POST' })
 
     const supabase = createSupabaseServiceClient()
 
+    const { data: existingVenue, error: fetchError } = await supabase
+      .from('venues')
+      .select('happy_hour_menu_storage_path')
+      .eq('id', data.venueId)
+      .maybeSingle()
+
+    if (fetchError) throw fetchError
+
     const { error } = await supabase
       .from('venues')
       .update({
@@ -148,6 +181,18 @@ export const clearVenueMenuPhoto = createServerFn({ method: 'POST' })
       .eq('id', data.venueId)
 
     if (error) throw error
+
+    if (existingVenue?.happy_hour_menu_storage_path) {
+      await deleteMenuPhotoFromStorage(supabase, existingVenue.happy_hour_menu_storage_path)
+    }
+
+    const { error: submissionError } = await supabase
+      .from('venue_menu_submissions')
+      .update({ status: 'rejected', reviewed_at: new Date().toISOString() })
+      .eq('venue_id', data.venueId)
+      .eq('status', 'approved')
+
+    if (submissionError) throw submissionError
 
     return { ok: true }
   })

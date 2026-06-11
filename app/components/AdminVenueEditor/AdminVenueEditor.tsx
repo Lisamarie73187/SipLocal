@@ -330,6 +330,7 @@ export function AdminVenueEditor({
             admin_notes: venue.admin_notes || null,
             hours_of_operation: venue.hours_of_operation.length > 0 ? venue.hours_of_operation : null,
             happy_hour_menu_url: venue.happy_hour_menu_url || null,
+            image_url: venue.image_url || null,
             price_level: venue.price_level,
             data_status: venue.data_status,
             is_published: venue.is_published,

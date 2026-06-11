@@ -178,6 +178,7 @@ async function parseVenueInfoFromText(pageText: string): Promise<VenueInfoAiResp
 async function applyVenueInfoToDb(
   venueId: string,
   info: VenueInfoAiResponse,
+  hasExistingHours: boolean,
 ): Promise<string[]> {
   const supabase = createSupabaseServiceClient()
   const fieldsUpdated: string[] = []
@@ -202,7 +203,7 @@ async function applyVenueInfoToDb(
     patch.vibes = info.vibes
     fieldsUpdated.push('vibes')
   }
-  if (info.hours_of_operation !== null) {
+  if (info.hours_of_operation !== null && !hasExistingHours) {
     patch.hours_of_operation = info.hours_of_operation
     fieldsUpdated.push('hours_of_operation')
   }
@@ -214,11 +215,15 @@ async function applyVenueInfoToDb(
   return fieldsUpdated
 }
 
+function isUploadedVenueCoverPhoto(imageUrl: string | null): boolean {
+  return imageUrl !== null && imageUrl.includes('/storage/v1/object/public/venue-images/')
+}
+
 async function getVenueForScrub(venueId: string) {
   const supabase = createSupabaseServiceClient()
   const { data: venue, error } = await supabase
     .from('venues')
-    .select('id, website_url, place_id, image_url')
+    .select('id, website_url, place_id, image_url, hours_of_operation')
     .eq('id', venueId)
     .single()
 
@@ -267,9 +272,10 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
     if (venue.website_url) {
       const pageText = await fetchPageTextWithSubPages(venue.website_url)
       const info = await parseVenueInfoFromText(pageText)
-      const fieldsUpdated = await applyVenueInfoToDb(data.venueId, info)
+      const hasExistingHours = Array.isArray(venue.hours_of_operation) && venue.hours_of_operation.length > 0
+      const fieldsUpdated = await applyVenueInfoToDb(data.venueId, info, hasExistingHours)
 
-      if (!venue.image_url && venue.place_id) {
+      if (!isUploadedVenueCoverPhoto(venue.image_url) && venue.place_id) {
         const place = await getGooglePlaceById(venue.place_id)
         if (place && place.photoResourceNames.length > 0) {
           const imageUrl = await fetchVenueImageFromGooglePlace(
@@ -312,7 +318,7 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
         fieldsUpdated.push('price_level')
       }
 
-      if (!venue.image_url && place.photoResourceNames.length > 0) {
+      if (!isUploadedVenueCoverPhoto(venue.image_url) && place.photoResourceNames.length > 0) {
         const imageUrl = await fetchVenueImageFromGooglePlace(
           data.venueId,
           place.photoResourceNames,

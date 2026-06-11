@@ -96,6 +96,7 @@ export const listAdminVenues = createServerFn({ method: 'GET' })
         place_id,
         website_url,
         archived_at,
+        last_verified_at,
         cities!inner ( slug, name ),
         happy_hour_slots ( id, data_status, is_active, confidence, source_urls ),
         events ( id, is_published )
@@ -186,6 +187,7 @@ export const listAdminVenues = createServerFn({ method: 'GET' })
         source_urls,
         confidence,
         archived_at: row.archived_at,
+        last_verified_at: row.last_verified_at,
       }
     })
 

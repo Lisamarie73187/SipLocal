@@ -15,7 +15,7 @@ import {
   type AdminVenuesListSearch,
 } from '@/utils/adminVenuesListSearch'
 import { venueStatusMismatch } from '@/utils/venueDataStatus'
-import { isUnverifiedConfidence } from '@/utils/venueTrust'
+import { formatTrustFreshnessLabel, isUnverifiedConfidence } from '@/utils/venueTrust'
 import { cn } from '@/utils'
 
 const inputClassName =
@@ -656,6 +656,11 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
                     <p className="mt-1 text-xs text-muted-foreground">
                       {venue.city_name} · /{venue.slug}
                       {venue.place_id ? ` · place ${venue.place_id.slice(0, 12)}…` : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {venue.last_verified_at
+                        ? formatTrustFreshnessLabel('verified', new Date(venue.last_verified_at))
+                        : 'Not yet verified'}
                     </p>
 
                     <VenueSourceLinks

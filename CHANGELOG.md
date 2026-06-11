@@ -12,6 +12,9 @@ User-requested changes, newest first.
 
 ## Done
 
+- **Fix menu photo and cover image not deleting/saving** — removing a menu photo now deletes the file from storage and clears any approved menu submission so it doesn't reappear; venue scrub no longer skips the cover photo when `image_url` is a placeholder; the venue editor now saves `image_url` on submit instead of clearing it.
+- **Last verified date on venue list** — admin venue list now shows when each venue was last verified (or "Not yet verified").
+- **Rescrub no longer overwrites existing hours of operation** — venue info scrub now only sets `hours_of_operation` if the venue doesn't already have hours filled in.
 - **Image URL field in venue editor** — view, edit, and preview a venue's cover image (`image_url`) directly in the venue editor.
 - **Venue scrub pulls a cover photo from Google Places** — if a venue has no `image_url`, scrubbing now downloads a Google Place photo, uploads it to a public `venue-images` storage bucket, and sets it as the venue's image.
 - **Bulk-mark events high confidence & publish** — button in the venue editor's Events section sets confidence to "high" and publishes all events at once (still requires "Save events" to persist).

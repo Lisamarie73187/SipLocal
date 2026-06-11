@@ -29,6 +29,7 @@ export interface AdminVenueListItem {
   /** Lowest confidence across live active slots, or all active slots if none are live. */
   confidence: Database['public']['Enums']['scrape_confidence'] | null
   archived_at: string | null
+  last_verified_at: string | null
 }
 
 export interface AdminVenueEditorSlot {
