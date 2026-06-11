@@ -12,7 +12,9 @@ import {
   type GooglePlaceVenue,
 } from '@/lib/scrape/googlePlaces'
 import { saveDiscoveredVenue } from '@/lib/scrape/saveDiscoveredVenue'
+import { scrubVenueInfo } from '@/server/adminVenueRescrub'
 import { createSupabaseServiceClient } from '@/lib/supabaseService'
+import { logger } from '@/utils/logger'
 import type { Database } from '@/types/database'
 
 function toAuthError(error: unknown): Error {
@@ -184,6 +186,29 @@ export const verifyVenueByPerson = createServerFn({ method: 'POST' })
 
     if (eventsError) {
       throw eventsError
+    }
+
+    return { ok: true }
+  })
+
+export const markVenueNoHappyHour = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ venueId: z.string().uuid() }))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    try {
+      await requireAdmin()
+    } catch (error) {
+      throw toAuthError(error)
+    }
+
+    const supabase = createSupabaseServiceClient()
+
+    const { error } = await supabase
+      .from('venues')
+      .update({ data_status: 'no_happy_hour_found' })
+      .eq('id', data.venueId)
+
+    if (error) {
+      throw error
     }
 
     return { ok: true }
@@ -425,6 +450,11 @@ export const discoverSelectedVenues = createServerFn({ method: 'POST' })
         result.venueIds.push(saved.venueId)
         if (saved.created) {
           result.created += 1
+          try {
+            await scrubVenueInfo({ data: { venueId: saved.venueId } })
+          } catch (error) {
+            logger.error('Initial venue info scrub failed', { placeId, error })
+          }
         } else {
           result.updated += 1
         }

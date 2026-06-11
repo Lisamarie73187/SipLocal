@@ -3,11 +3,14 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Archive, Loader2, Pencil, Plus } from 'lucide-react'
 
 import { AdminArchiveVenues } from '@/components/AdminArchiveVenues/AdminArchiveVenues'
-import { AdminVenueDiscoverPanel } from '@/components/AdminVenueDiscoverPanel/AdminVenueDiscoverPanel'
 import { AdminUnpublishVenues } from '@/components/AdminUnpublishVenues/AdminUnpublishVenues'
 import { Button } from '@/components/ui/button'
 import { VenueSourceLinks } from '@/components/VenueSourceLinks/VenueSourceLinks'
-import { listAdminVenues, type AdminVenueListItem } from '@/server/adminVenues'
+import {
+  getAdminVenueCities,
+  listAdminVenues,
+  type AdminVenueListItem,
+} from '@/server/adminVenues'
 import type { ScrapeConfidence } from '@/types/venue'
 import {
   buildAdminVenuesListSearch,
@@ -28,17 +31,20 @@ const VENUE_LIST_TABS: Array<{ id: VenueListTab; label: string }> = [
   { id: 'published', label: 'Published' },
   { id: 'pending_review', label: 'Pending review' },
   { id: 'live', label: 'Live' },
+  { id: 'discovered', label: 'Discovered' },
 ]
 
 function venueTabToApi(tab: VenueListTab): {
   liveOnly: boolean
   pendingReviewOnly: boolean
   publishedOnly: boolean
+  discoveredOnly: boolean
 } {
   return {
     liveOnly: tab === 'live',
     pendingReviewOnly: tab === 'pending_review',
     publishedOnly: tab === 'published',
+    discoveredOnly: tab === 'discovered',
   }
 }
 
@@ -90,7 +96,8 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
   const [listTab, setListTab] = useState<VenueListTab>(listSearch.tab ?? 'all')
   const [hasEventsFilter, setHasEventsFilter] = useState(listSearch.hasEvents ?? false)
   const [showArchived, setShowArchived] = useState(listSearch.archived ?? false)
-  const { liveOnly, pendingReviewOnly, publishedOnly } = venueTabToApi(listTab)
+  const { liveOnly, pendingReviewOnly, publishedOnly, discoveredOnly } = venueTabToApi(listTab)
+  const [cities, setCities] = useState<Array<{ slug: string; name: string; state: string }>>([])
   const [venues, setVenues] = useState<AdminVenueListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -115,6 +122,12 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
   const editLinkSearch = buildAdminVenuesListSearch(
     currentListSearchParams(citySlug, search, listTab, hasEventsFilter, showArchived),
   )
+
+  useEffect(() => {
+    void getAdminVenueCities().then((rows) => {
+      setCities(rows)
+    })
+  }, [])
 
   useEffect(() => {
     setCitySlug(listSearch.city ?? 'bend-or')
@@ -155,6 +168,7 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
           liveOnly: showArchived ? undefined : liveOnly,
           pendingReviewOnly: showArchived ? undefined : pendingReviewOnly,
           publishedOnly: showArchived ? undefined : publishedOnly,
+          discoveredOnly: showArchived ? undefined : discoveredOnly,
           archivedOnly: showArchived,
           withEventsOnly: hasEventsFilter,
         },
@@ -182,6 +196,7 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
     liveOnly,
     pendingReviewOnly,
     publishedOnly,
+    discoveredOnly,
     hasEventsFilter,
     showArchived,
   ])
@@ -346,13 +361,18 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-dark">City slug</span>
-          <input
+          <span className="text-sm font-medium text-dark">City</span>
+          <select
             value={citySlug}
             onChange={(event) => setCitySlug(event.target.value)}
             className={inputClassName}
-            placeholder="bend-or"
-          />
+          >
+            {cities.map((city) => (
+              <option key={city.slug} value={city.slug}>
+                {city.name}, {city.state}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="block space-y-2">
           <span className="text-sm font-medium text-dark">Search</span>
@@ -370,7 +390,7 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
       {!showArchived ? (
         <div className="space-y-3">
           <div
-            className="grid w-full grid-cols-4 gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm"
+            className="grid w-full grid-cols-5 gap-1 rounded-xl border border-border/70 bg-card p-1 shadow-sm"
             role="tablist"
             aria-label="Filter venues"
           >
@@ -458,13 +478,6 @@ export function AdminVenuesList({ listSearch }: AdminVenuesListProps) {
           </button>
         ) : null}
       </div>
-
-      {!showArchived ? (
-        <AdminVenueDiscoverPanel
-          citySlug={citySlug}
-          onVenuesAdded={() => void load()}
-        />
-      ) : null}
 
       {!loading && venues.length > 0 ? (
         <div className="sticky top-0 z-10 space-y-2 rounded-xl border border-border/70 bg-card/95 p-4 shadow-sm backdrop-blur-sm">

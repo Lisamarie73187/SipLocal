@@ -3,11 +3,13 @@ import { Link } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { AdminVenueDiscoverPanel } from '@/components/AdminVenueDiscoverPanel/AdminVenueDiscoverPanel'
 import { HappyHourPastePanel } from '@/components/HappyHourPastePanel/HappyHourPastePanel'
 import {
   discoverVenuesByName,
   getAdminDiscoverDashboard,
   listDiscoveredVenues,
+  markVenueNoHappyHour,
   type DiscoveredVenueListItem,
 } from '@/server/adminDiscover'
 import { pasteAdminVenueHappyHours } from '@/server/adminVenues'
@@ -24,6 +26,7 @@ export function AdminDiscoverPanel() {
   const [venues, setVenues] = useState<DiscoveredVenueListItem[]>([])
   const [loadingVenues, setLoadingVenues] = useState(true)
   const [pastingVenueId, setPastingVenueId] = useState<string | null>(null)
+  const [markingVenueId, setMarkingVenueId] = useState<string | null>(null)
 
   const loadVenues = useCallback(async (): Promise<void> => {
     setLoadingVenues(true)
@@ -44,6 +47,13 @@ export function AdminDiscoverPanel() {
   useEffect(() => {
     void loadVenues()
   }, [loadVenues])
+
+  const handleMarkNoHappyHour = (venueId: string): void => {
+    setMarkingVenueId(venueId)
+    void markVenueNoHappyHour({ data: { venueId } })
+      .then(() => loadVenues())
+      .finally(() => setMarkingVenueId(null))
+  }
 
   const handleDiscover = (): void => {
     setDiscovering(true)
@@ -119,6 +129,8 @@ export function AdminDiscoverPanel() {
         ) : null}
       </section>
 
+      <AdminVenueDiscoverPanel citySlug={citySlug} onVenuesAdded={() => void loadVenues()} />
+
       <section className="space-y-4 rounded-xl border border-border/70 bg-card p-4 shadow-sm">
         <div>
           <h2 className="font-heading text-lg font-semibold text-dark">Discovered venues</h2>
@@ -189,6 +201,17 @@ export function AdminDiscoverPanel() {
                     }
                   }}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 min-h-11"
+                  disabled={markingVenueId === venue.id}
+                  onClick={() => handleMarkNoHappyHour(venue.id)}
+                >
+                  {markingVenueId === venue.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                  No happy hour — send to review
+                </Button>
               </li>
             ))}
           </ul>

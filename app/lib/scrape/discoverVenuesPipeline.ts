@@ -1,5 +1,6 @@
 import { findGooglePlaceByText } from '@/lib/scrape/googlePlaces'
 import { saveDiscoveredVenue } from '@/lib/scrape/saveDiscoveredVenue'
+import { scrubVenueInfo } from '@/server/adminVenueRescrub'
 import { createSupabaseServiceClient } from '@/lib/supabaseService'
 import { logger } from '@/utils/logger'
 
@@ -130,6 +131,14 @@ export async function discoverVenuesFromNames(input: {
         created += 1
       } else {
         updated += 1
+      }
+
+      if (saved.created) {
+        try {
+          await scrubVenueInfo({ data: { venueId: saved.venueId } })
+        } catch (error) {
+          logger.error('Initial venue info scrub failed', { inputName, error })
+        }
       }
 
       results.push({

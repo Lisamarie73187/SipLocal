@@ -1,6 +1,12 @@
-export type AdminVenueListTab = 'all' | 'published' | 'pending_review' | 'live'
+export type AdminVenueListTab = 'all' | 'published' | 'pending_review' | 'live' | 'discovered'
 
-const VENUE_LIST_TABS: AdminVenueListTab[] = ['all', 'published', 'pending_review', 'live']
+const VENUE_LIST_TABS: AdminVenueListTab[] = [
+  'all',
+  'published',
+  'pending_review',
+  'live',
+  'discovered',
+]
 
 function isVenueListTab(value: string): value is AdminVenueListTab {
   return VENUE_LIST_TABS.includes(value as AdminVenueListTab)
