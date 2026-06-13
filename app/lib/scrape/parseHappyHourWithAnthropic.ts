@@ -102,7 +102,14 @@ export function normalizeAnthropicHappyHourResponse(raw: unknown): ParseHappyHou
       | 'pm'
       | undefined
     const start_time = normalizeTimeValue(slot.start_time, endMeridiem)
-    const end_time = normalizeTimeValue(slot.end_time, endMeridiem)
+    let end_time = normalizeTimeValue(slot.end_time, endMeridiem)
+
+    // "Midnight" as an end time (00:00) means the slot runs to the end of the day.
+    // Our schema requires start_time < end_time, so represent it as 23:59.
+    if (end_time === '00:00' && start_time && start_time !== '00:00') {
+      end_time = '23:59'
+    }
+
     if (!start_time || !end_time || start_time >= end_time) {
       warnings.push(`Skipped slot with invalid times: ${slot.start_time} – ${slot.end_time}`)
       continue

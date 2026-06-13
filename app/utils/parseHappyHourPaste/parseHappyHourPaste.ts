@@ -176,9 +176,15 @@ function parseTimeRange(startToken: string, endToken: string): { start: string; 
   }
 
   const start = parseTimeToken(startToken, startMeridiem)
-  const end = parseTimeToken(endToken, endMeridiem ?? startMeridiem)
+  let end = parseTimeToken(endToken, endMeridiem ?? startMeridiem)
   if (!start || !end) {
     return null
+  }
+
+  // "Midnight" as an end time (00:00) means the slot runs to the end of the day.
+  // Our schema requires start_time < end_time, so represent it as 23:59.
+  if (end === '00:00' && start !== '00:00') {
+    end = '23:59'
   }
 
   if (start >= end) {

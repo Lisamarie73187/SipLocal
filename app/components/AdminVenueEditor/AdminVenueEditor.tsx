@@ -136,7 +136,14 @@ function parsedSlotsToFormState(parsed: ParsedHappyHourSlot[]): SlotFormState[] 
     is_active: true,
     confidence: null,
     source_urls: [],
-    deals: [{ label: '', category: 'drinks', price_text: null }],
+    deals:
+      slot.deals && slot.deals.length > 0
+        ? slot.deals.map((deal) => ({
+            label: deal.label,
+            category: deal.category ?? 'drinks',
+            price_text: deal.price_text ?? null,
+          }))
+        : [{ label: '', category: 'drinks', price_text: null }],
   }))
 }
 
