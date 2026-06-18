@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ManageRouteImport } from './routes/manage'
 import { Route as LoginRouteImport } from './routes/login'
@@ -36,6 +37,11 @@ const WelcomeRoute = WelcomeRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/manage': typeof ManageRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
   '/admin/review': typeof AdminReviewRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
   '/admin/review': typeof AdminReviewRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/manage': typeof ManageRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
+  '/support': typeof SupportRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
   '/admin/review': typeof AdminReviewRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/manage'
     | '/privacy'
     | '/profile'
+    | '/support'
     | '/welcome'
     | '/admin/claims'
     | '/admin/review'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/profile'
+    | '/support'
     | '/welcome'
     | '/admin/claims'
     | '/admin/review'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/manage'
     | '/privacy'
     | '/profile'
+    | '/support'
     | '/welcome'
     | '/admin/claims'
     | '/admin/review'
@@ -245,6 +257,7 @@ export interface RootRouteChildren {
   ManageRoute: typeof ManageRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
+  SupportRoute: typeof SupportRoute
   WelcomeRoute: typeof WelcomeRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
 }
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -433,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManageRoute: ManageRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
+  SupportRoute: SupportRoute,
   WelcomeRoute: WelcomeRoute,
   VenuesSlugRoute: VenuesSlugRoute,
 }
