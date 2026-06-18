@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ManageRouteImport } from './routes/manage'
 import { Route as LoginRouteImport } from './routes/login'
@@ -30,6 +31,11 @@ import { Route as AdminVenuesVenueIdRouteImport } from './routes/admin.venues.$v
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/manage': typeof ManageRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/manage': typeof ManageRouteWithChildren
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/welcome': typeof WelcomeRoute
   '/admin/claims': typeof AdminClaimsRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/manage'
+    | '/privacy'
     | '/profile'
     | '/welcome'
     | '/admin/claims'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/'
     | '/favorites'
     | '/login'
+    | '/privacy'
     | '/profile'
     | '/welcome'
     | '/admin/claims'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/manage'
+    | '/privacy'
     | '/profile'
     | '/welcome'
     | '/admin/claims'
@@ -231,6 +243,7 @@ export interface RootRouteChildren {
   FavoritesRoute: typeof FavoritesRoute
   LoginRoute: typeof LoginRoute
   ManageRoute: typeof ManageRouteWithChildren
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   WelcomeRoute: typeof WelcomeRoute
   VenuesSlugRoute: typeof VenuesSlugRoute
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -411,6 +431,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritesRoute: FavoritesRoute,
   LoginRoute: LoginRoute,
   ManageRoute: ManageRouteWithChildren,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   WelcomeRoute: WelcomeRoute,
   VenuesSlugRoute: VenuesSlugRoute,
