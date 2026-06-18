@@ -78,7 +78,7 @@ export function AdminVenueSuggestionReviewCard({
           ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
-          {onParse ? (
+          {onParse && suggestion.photo_url ? (
             <Button
               type="button"
               size="sm"
@@ -100,11 +100,13 @@ export function AdminVenueSuggestionReviewCard({
         </div>
       </div>
 
-      <img
-        src={suggestion.photo_url}
-        alt={`Happy hour menu for ${suggestion.venue_name}`}
-        className="mt-3 max-h-64 w-full rounded-lg border border-border/70 object-contain bg-muted/20"
-      />
+      {suggestion.photo_url ? (
+        <img
+          src={suggestion.photo_url}
+          alt={`Happy hour menu for ${suggestion.venue_name}`}
+          className="mt-3 max-h-64 w-full rounded-lg border border-border/70 object-contain bg-muted/20"
+        />
+      ) : null}
 
       {suggestion.parsed_slots?.slots.length ? (
         <ul className="mt-3 space-y-2 text-xs text-dark">

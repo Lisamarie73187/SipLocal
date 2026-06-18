@@ -25,6 +25,7 @@ import {
   type AdminVenueSuggestionItem,
 } from '@/server/venueSuggestions'
 import {
+  getAdminVenueCities,
   listPendingVenueUpdates,
   type AdminPendingVenueUpdate,
 } from '@/server/adminVenues'
@@ -97,14 +98,14 @@ function PendingVenueUpdateList({ updates }: { updates: AdminPendingVenueUpdate[
 }
 
 export interface AdminPendingUpdatesPanelProps {
-  citySlug?: string
   showHeader?: boolean
 }
 
 export function AdminPendingUpdatesPanel({
-  citySlug = 'bend-or',
   showHeader = true,
 }: AdminPendingUpdatesPanelProps) {
+  const [cities, setCities] = useState<Array<{ slug: string; name: string; state: string }>>([])
+  const [citySlug, setCitySlug] = useState('')
   const [activeTab, setActiveTab] = useState<ReviewTab>('venue_updates')
   const [managerUpdates, setManagerUpdates] = useState<AdminPendingVenueUpdate[]>([])
   const [staffReview, setStaffReview] = useState<AdminPendingVenueUpdate[]>([])
@@ -119,6 +120,9 @@ export function AdminPendingUpdatesPanel({
   const [feedback, setFeedback] = useState<string | null>(null)
 
   const loadUpdates = useCallback(async (): Promise<void> => {
+    if (!citySlug) {
+      return
+    }
     setLoading(true)
     try {
       const [result, submissions, eventSubs, suggestions] = await Promise.all([
@@ -144,6 +148,13 @@ export function AdminPendingUpdatesPanel({
       setLoading(false)
     }
   }, [citySlug])
+
+  useEffect(() => {
+    void getAdminVenueCities().then((rows) => {
+      setCities(rows)
+      setCitySlug((current) => current || rows[0]?.slug || 'bend-or')
+    })
+  }, [])
 
   useEffect(() => {
     void loadUpdates()
@@ -261,6 +272,21 @@ export function AdminPendingUpdatesPanel({
           </Link>
         </div>
       ) : null}
+
+      <label className="block max-w-xs space-y-2">
+        <span className="text-sm font-medium text-dark">City</span>
+        <select
+          value={citySlug}
+          onChange={(event) => setCitySlug(event.target.value)}
+          className="h-11 w-full rounded-xl border border-border/70 bg-background px-3 text-base text-dark focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          {cities.map((city) => (
+            <option key={city.slug} value={city.slug}>
+              {city.name}, {city.state}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div
         className="inline-flex rounded-xl border border-border/70 bg-muted/40 p-1"

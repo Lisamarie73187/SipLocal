@@ -785,6 +785,9 @@ export type Database = {
           description: string | null
           featured_until: string | null
           hours_of_operation: Json | null
+          hours_of_operation_source:
+            | Database["public"]["Enums"]["hours_of_operation_source"]
+            | null
           id: string
           image_url: string | null
           is_featured: boolean
@@ -825,6 +828,9 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           hours_of_operation?: Json | null
+          hours_of_operation_source?:
+            | Database["public"]["Enums"]["hours_of_operation_source"]
+            | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -865,6 +871,9 @@ export type Database = {
           description?: string | null
           featured_until?: string | null
           hours_of_operation?: Json | null
+          hours_of_operation_source?:
+            | Database["public"]["Enums"]["hours_of_operation_source"]
+            | null
           id?: string
           image_url?: string | null
           is_featured?: boolean
@@ -925,6 +934,7 @@ export type Database = {
         | "sports"
         | "nightlife"
       happy_hour_data_status: "live" | "pending_review" | "flagged"
+      hours_of_operation_source: "website" | "google" | "manual"
       menu_submission_source: "crowd" | "manager"
       menu_submission_status: "pending_review" | "approved" | "rejected"
       profile_gender: "woman" | "man" | "non_binary" | "prefer_not_to_say"
@@ -1104,6 +1114,7 @@ export const Constants = {
         "nightlife",
       ],
       happy_hour_data_status: ["live", "pending_review", "flagged"],
+      hours_of_operation_source: ["website", "google", "manual"],
       menu_submission_source: ["crowd", "manager"],
       menu_submission_status: ["pending_review", "approved", "rejected"],
       profile_gender: ["woman", "man", "non_binary", "prefer_not_to_say"],

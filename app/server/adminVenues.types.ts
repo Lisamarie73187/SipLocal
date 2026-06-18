@@ -93,6 +93,7 @@ export interface AdminVenueEditorData {
     schedule_cadence: Database['public']['Enums']['schedule_cadence'] | null
     image_url: string | null
     hours_of_operation: HoursOfOperationEntry[] | null
+    hours_of_operation_source: 'website' | 'google' | 'manual' | null
   } | null
   slots: AdminVenueEditorSlot[]
   events: AdminVenueEditorEvent[]

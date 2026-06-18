@@ -24,28 +24,36 @@ Deno.serve(async (req) => {
 
     const { data: venue, error: venueError } = await supabase
       .from('venues')
-      .select('id, is_published, archived_at, happy_hour_menu_storage_path, happy_hour_menu_url')
+      .select('id, is_published, archived_at')
       .eq('id', venueId)
       .maybeSingle()
 
     if (venueError || !venue || !venue.is_published || venue.archived_at) {
-      return jsonResponse({ url: null })
+      return jsonResponse({ url: null, urls: [] })
     }
 
-    if (venue.happy_hour_menu_storage_path) {
-      const { data, error } = await supabase.storage
-        .from('menu-photos')
-        .createSignedUrl(venue.happy_hour_menu_storage_path, 3600)
+    const { data: menuImages, error: menuImagesError } = await supabase
+      .from('venue_menu_images')
+      .select('storage_path')
+      .eq('venue_id', venueId)
+      .order('position', { ascending: true })
 
-      if (error || !data?.signedUrl) {
-        return jsonResponse({ url: null })
+    if (!menuImagesError && menuImages && menuImages.length > 0) {
+      const signedUrls = await Promise.all(
+        menuImages.map(async (image) => {
+          const { data, error } = await supabase.storage
+            .from('menu-photos')
+            .createSignedUrl(image.storage_path, 3600)
+
+          return error ? null : (data?.signedUrl ?? null)
+        }),
+      )
+
+      const urls = signedUrls.filter((signedUrl): signedUrl is string => signedUrl !== null)
+
+      if (urls.length > 0) {
+        return jsonResponse({ url: urls[0], urls })
       }
-
-      return jsonResponse({ url: data.signedUrl })
-    }
-
-    if (venue.happy_hour_menu_url) {
-      return jsonResponse({ url: venue.happy_hour_menu_url })
     }
 
     const { data: submission, error: submissionError } = await supabase
@@ -58,7 +66,7 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (submissionError || !submission) {
-      return jsonResponse({ url: null })
+      return jsonResponse({ url: null, urls: [] })
     }
 
     const { data, error } = await supabase.storage
@@ -66,10 +74,10 @@ Deno.serve(async (req) => {
       .createSignedUrl(submission.storage_path, 3600)
 
     if (error || !data?.signedUrl) {
-      return jsonResponse({ url: null })
+      return jsonResponse({ url: null, urls: [] })
     }
 
-    return jsonResponse({ url: data.signedUrl })
+    return jsonResponse({ url: data.signedUrl, urls: [data.signedUrl] })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load menu image.'
     return errorResponse(message, 500)

@@ -41,7 +41,7 @@ export interface AdminVenueSuggestionItem {
   user_email: string | null
   user_description: string | null
   status: Database['public']['Enums']['menu_submission_status']
-  photo_url: string
+  photo_url: string | null
   parsed_slots: ParseHappyHourPasteResult | null
   submitter_lat: number | null
   submitter_lng: number | null
@@ -183,7 +183,9 @@ export const listPendingVenueSuggestions = createServerFn({ method: 'GET' })
 
     for (const row of rows ?? []) {
       const { data: userData } = await supabase.auth.admin.getUserById(row.user_id)
-      const photoUrl = await createSignedMenuPhotoUrl(supabase, row.storage_path)
+      const photoUrl = row.storage_path
+        ? await createSignedMenuPhotoUrl(supabase, row.storage_path)
+        : null
       items.push({
         id: row.id,
         venue_name: row.venue_name,
@@ -224,7 +226,9 @@ export const rejectVenueSuggestion = createServerFn({ method: 'POST' })
       throw loadError ?? new Error('Suggestion not found or already reviewed.')
     }
 
-    await deleteMenuPhotoFromStorage(supabase, suggestion.storage_path)
+    if (suggestion.storage_path) {
+      await deleteMenuPhotoFromStorage(supabase, suggestion.storage_path)
+    }
 
     const { error: deleteError } = await supabase
       .from('venue_suggestions')
@@ -460,6 +464,10 @@ export const parseVenueSuggestionMenuPhoto = createServerFn({ method: 'POST' })
 
     if (suggestion.status !== 'pending_review') {
       throw new Error('Only pending suggestions can be parsed.')
+    }
+
+    if (!suggestion.storage_path) {
+      throw new Error('This suggestion has no menu photo to parse.')
     }
 
     const { data: fileData, error: downloadError } = await supabase.storage

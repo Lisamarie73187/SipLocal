@@ -66,6 +66,8 @@ export interface GooglePlaceVenue {
   photoResourceNames: string[]
   primaryType: string | null
   types: string[]
+  /** Regular operating hours from Google, if available. */
+  hoursOfOperation: Array<{ day: number; open: string; close: string }> | null
 }
 
 interface GoogleDisplayName {
@@ -77,6 +79,21 @@ interface GoogleLatLng {
   longitude?: number
 }
 
+interface GoogleTimeOfDay {
+  day?: number
+  hour?: number
+  minute?: number
+}
+
+interface GoogleOpeningHoursPeriod {
+  open?: GoogleTimeOfDay
+  close?: GoogleTimeOfDay
+}
+
+interface GoogleOpeningHours {
+  periods?: GoogleOpeningHoursPeriod[]
+}
+
 interface GooglePlaceRaw {
   id?: string
   displayName?: GoogleDisplayName
@@ -85,6 +102,7 @@ interface GooglePlaceRaw {
   nationalPhoneNumber?: string
   websiteUri?: string
   priceLevel?: string
+  regularOpeningHours?: GoogleOpeningHours
   photos?: Array<{ name?: string }>
   primaryType?: string
   types?: string[]
@@ -113,6 +131,35 @@ function parseGooglePriceLevel(value: string | undefined): number | null {
   return map[match[1]] ?? null
 }
 
+function formatGoogleTime(time: GoogleTimeOfDay | undefined): string | null {
+  if (time?.hour == null || time?.minute == null) {
+    return null
+  }
+  return `${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`
+}
+
+function parseGoogleOpeningHours(
+  hours: GoogleOpeningHours | undefined,
+): Array<{ day: number; open: string; close: string }> | null {
+  if (!hours?.periods?.length) {
+    return null
+  }
+
+  const entries: Array<{ day: number; open: string; close: string }> = []
+
+  for (const period of hours.periods) {
+    const day = period.open?.day
+    const open = formatGoogleTime(period.open)
+    const close = formatGoogleTime(period.close)
+    if (day == null || day < 0 || day > 6 || !open || !close) {
+      continue
+    }
+    entries.push({ day, open, close })
+  }
+
+  return entries.length > 0 ? entries.sort((a, b) => a.day - b.day) : null
+}
+
 function mapPlace(raw: GooglePlaceRaw): GooglePlaceVenue | null {
   const placeId = raw.id?.trim()
   const name = raw.displayName?.text?.trim()
@@ -127,7 +174,7 @@ function mapPlace(raw: GooglePlaceRaw): GooglePlaceVenue | null {
   return {
     placeId,
     name,
-    formattedAddress,
+    formattedAddress: formattedAddress.replace(/,\s*(United States|USA)$/, ''),
     lat,
     lng,
     phone: raw.nationalPhoneNumber?.trim() ?? null,
@@ -138,6 +185,7 @@ function mapPlace(raw: GooglePlaceRaw): GooglePlaceVenue | null {
       .filter((name): name is string => Boolean(name)),
     primaryType: raw.primaryType ?? null,
     types: raw.types ?? [],
+    hoursOfOperation: parseGoogleOpeningHours(raw.regularOpeningHours),
   }
 }
 

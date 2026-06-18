@@ -7,6 +7,7 @@ import {
   scrubVenueEvents,
   scrubVenueHappyHours,
   scrubVenueInfo,
+  type HoursOfOperationSource,
   type RescrubSource,
 } from '@/server/adminVenueRescrub'
 import type { ParsedEvent } from '@/lib/scrape/parseEventsWithAnthropic'
@@ -30,6 +31,7 @@ interface ScrubState {
   lastFields: string[]
   lastSlotCount: number | null
   lastEventCount: number | null
+  lastHoursSource: HoursOfOperationSource | null
 }
 
 export function AdminVenueRescrubCard({
@@ -47,6 +49,7 @@ export function AdminVenueRescrubCard({
     lastFields: [],
     lastSlotCount: null,
     lastEventCount: null,
+    lastHoursSource: null,
   })
 
   if (!hasWebsite && !hasPlaceId) {
@@ -56,13 +59,13 @@ export function AdminVenueRescrubCard({
   const canScrubHhOrEvents = hasWebsite
 
   const handleScrub = (type: ScrubType): void => {
-    setState((s) => ({ ...s, running: type, error: null, lastSource: null, lastFields: [], lastSlotCount: null, lastEventCount: null }))
+    setState((s) => ({ ...s, running: type, error: null, lastSource: null, lastFields: [], lastSlotCount: null, lastEventCount: null, lastHoursSource: null }))
 
     void (async () => {
       try {
         if (type === 'venue') {
           const result = await scrubVenueInfo({ data: { venueId } })
-          setState((s) => ({ ...s, running: null, lastSource: result.source, lastFields: result.fieldsUpdated }))
+          setState((s) => ({ ...s, running: null, lastSource: result.source, lastFields: result.fieldsUpdated, lastHoursSource: result.hoursSource }))
           await onVenueInfoApplied()
         } else if (type === 'happyhour') {
           const result = await scrubVenueHappyHours({ data: { venueId } })
@@ -81,6 +84,7 @@ export function AdminVenueRescrubCard({
             lastFields: result.venueInfo.fieldsUpdated,
             lastSlotCount: result.slots.length,
             lastEventCount: result.events.length,
+            lastHoursSource: result.venueInfo.hoursSource,
           }))
           await onVenueInfoApplied()
           if (result.slots.length > 0) {
@@ -199,6 +203,12 @@ export function AdminVenueRescrubCard({
           ) : null}
           {state.lastFields.length > 0 ? (
             <p>Venue fields updated: {state.lastFields.join(', ')}</p>
+          ) : null}
+          {state.lastHoursSource ? (
+            <p>
+              Hours of operation pulled from{' '}
+              {state.lastHoursSource === 'google' ? 'Google' : 'the website'}.
+            </p>
           ) : null}
           {state.lastSlotCount !== null ? (
             <p>

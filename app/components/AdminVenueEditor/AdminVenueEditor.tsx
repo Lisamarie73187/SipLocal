@@ -644,7 +644,18 @@ export function AdminVenueEditor({
         </label>
 
         <div className="space-y-2">
-          <span className={labelClassName}>Hours of operation</span>
+          <div className="flex items-center gap-2">
+            <span className={labelClassName}>Hours of operation</span>
+            {venue.hours_of_operation_source ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold tracking-wide text-muted-foreground uppercase">
+                {venue.hours_of_operation_source === 'google'
+                  ? 'From Google'
+                  : venue.hours_of_operation_source === 'website'
+                    ? 'From website'
+                    : 'Manual'}
+              </span>
+            ) : null}
+          </div>
           <p className="text-xs text-muted-foreground">
             Regular open/close hours by day. Used to show today's hours on the detail card.
           </p>

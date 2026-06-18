@@ -10,6 +10,8 @@ import { parseHappyHourPasteSmart } from '@/lib/scrape/parseHappyHourWithAnthrop
 import type { DayOfWeek } from '@/types/venue'
 import type { Database } from '@/types/database'
 
+type VenueInsert = Database['public']['Tables']['venues']['Insert']
+
 import {
   resolveUniqueSlug,
   saveVenueEventsSchema,
@@ -316,7 +318,26 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
     let venueId = venue.id
     let slug = slugifyVenueName(venue.slug || venue.name)
 
-    const venuePayload = {
+    let hoursOfOperationSource: 'website' | 'google' | 'manual' | null = null
+    if (venue.hours_of_operation && venue.hours_of_operation.length > 0) {
+      if (venueId) {
+        const { data: existingVenue } = await supabase
+          .from('venues')
+          .select('hours_of_operation')
+          .eq('id', venueId)
+          .single()
+
+        const existingHours = JSON.stringify(existingVenue?.hours_of_operation ?? null)
+        const newHours = JSON.stringify(venue.hours_of_operation)
+        if (existingHours !== newHours) {
+          hoursOfOperationSource = 'manual'
+        }
+      } else {
+        hoursOfOperationSource = 'manual'
+      }
+    }
+
+    const venuePayload: VenueInsert & { hours_of_operation_source?: 'website' | 'google' | 'manual' | null } = {
       city_id: venue.city_id,
       name: venue.name.trim(),
       slug,
@@ -339,6 +360,10 @@ export const saveAdminVenue = createServerFn({ method: 'POST' })
       schedule_cadence: venue.schedule_cadence ?? null,
       hours_of_operation: venue.hours_of_operation ?? null,
       image_url: venue.image_url?.trim() || null,
+    }
+
+    if (hoursOfOperationSource !== null) {
+      venuePayload.hours_of_operation_source = hoursOfOperationSource
     }
 
     if (venueId) {

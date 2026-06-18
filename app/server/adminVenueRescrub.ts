@@ -25,10 +25,13 @@ type PriceLevel = Database['public']['Enums']['venue_price_level']
 
 export type RescrubSource = 'website' | 'google'
 
+export type HoursOfOperationSource = 'website' | 'google' | 'manual'
+
 export interface ScrubVenueInfoResult {
   venueId: string
   source: RescrubSource
   fieldsUpdated: string[]
+  hoursSource: HoursOfOperationSource | null
 }
 
 export interface ScrubVenueHappyHoursResult {
@@ -179,11 +182,13 @@ async function applyVenueInfoToDb(
   venueId: string,
   info: VenueInfoAiResponse,
   hasExistingHours: boolean,
-): Promise<string[]> {
+  googleHours: Array<{ day: number; open: string; close: string }> | null,
+): Promise<{ fieldsUpdated: string[]; hoursSource: HoursOfOperationSource | null }> {
   const supabase = createSupabaseServiceClient()
   const fieldsUpdated: string[] = []
+  let hoursSource: HoursOfOperationSource | null = null
 
-  const patch: VenueUpdate & { hours_of_operation?: unknown } = {
+  const patch: VenueUpdate = {
     last_scraped_at: new Date().toISOString(),
   }
 
@@ -203,16 +208,24 @@ async function applyVenueInfoToDb(
     patch.vibes = info.vibes
     fieldsUpdated.push('vibes')
   }
-  if (info.hours_of_operation !== null && !hasExistingHours) {
-    patch.hours_of_operation = info.hours_of_operation
-    fieldsUpdated.push('hours_of_operation')
+  if (!hasExistingHours) {
+    if (info.hours_of_operation !== null) {
+      patch.hours_of_operation = info.hours_of_operation
+      patch.hours_of_operation_source = 'website'
+      hoursSource = 'website'
+      fieldsUpdated.push('hours_of_operation')
+    } else if (googleHours !== null) {
+      patch.hours_of_operation = googleHours
+      patch.hours_of_operation_source = 'google'
+      hoursSource = 'google'
+      fieldsUpdated.push('hours_of_operation')
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await supabase.from('venues').update(patch as any).eq('id', venueId)
+  const { error } = await supabase.from('venues').update(patch).eq('id', venueId)
   if (error) throw error
 
-  return fieldsUpdated
+  return { fieldsUpdated, hoursSource }
 }
 
 function isUploadedVenueCoverPhoto(imageUrl: string | null): boolean {
@@ -273,28 +286,38 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
       const pageText = await fetchPageTextWithSubPages(venue.website_url)
       const info = await parseVenueInfoFromText(pageText)
       const hasExistingHours = Array.isArray(venue.hours_of_operation) && venue.hours_of_operation.length > 0
-      const fieldsUpdated = await applyVenueInfoToDb(data.venueId, info, hasExistingHours)
 
-      if (!isUploadedVenueCoverPhoto(venue.image_url) && venue.place_id) {
-        const place = await getGooglePlaceById(venue.place_id)
-        if (place && place.photoResourceNames.length > 0) {
-          const imageUrl = await fetchVenueImageFromGooglePlace(
-            data.venueId,
-            place.photoResourceNames,
-          )
-          if (imageUrl) {
-            const supabase = createSupabaseServiceClient()
-            const { error } = await supabase
-              .from('venues')
-              .update({ image_url: imageUrl })
-              .eq('id', data.venueId)
-            if (error) throw error
-            fieldsUpdated.push('image_url')
-          }
+      let googlePlace: Awaited<ReturnType<typeof getGooglePlaceById>> = null
+      if (!isUploadedVenueCoverPhoto(venue.image_url) || (!hasExistingHours && !info.hours_of_operation)) {
+        if (venue.place_id) {
+          googlePlace = await getGooglePlaceById(venue.place_id)
         }
       }
 
-      return { venueId: data.venueId, source: 'website', fieldsUpdated }
+      const { fieldsUpdated, hoursSource } = await applyVenueInfoToDb(
+        data.venueId,
+        info,
+        hasExistingHours,
+        googlePlace?.hoursOfOperation ?? null,
+      )
+
+      if (!isUploadedVenueCoverPhoto(venue.image_url) && googlePlace && googlePlace.photoResourceNames.length > 0) {
+        const imageUrl = await fetchVenueImageFromGooglePlace(
+          data.venueId,
+          googlePlace.photoResourceNames,
+        )
+        if (imageUrl) {
+          const supabase = createSupabaseServiceClient()
+          const { error } = await supabase
+            .from('venues')
+            .update({ image_url: imageUrl })
+            .eq('id', data.venueId)
+          if (error) throw error
+          fieldsUpdated.push('image_url')
+        }
+      }
+
+      return { venueId: data.venueId, source: 'website', fieldsUpdated, hoursSource }
     }
 
     if (venue.place_id) {
@@ -306,7 +329,10 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
 
       const supabase = createSupabaseServiceClient()
       const fieldsUpdated: string[] = []
-      const patch: VenueUpdate = { last_scraped_at: new Date().toISOString() }
+      let hoursSource: HoursOfOperationSource | null = null
+      const patch: VenueUpdate = {
+        last_scraped_at: new Date().toISOString(),
+      }
 
       if (place.name) { patch.name = place.name; fieldsUpdated.push('name') }
       if (place.formattedAddress) { patch.address_line1 = place.formattedAddress; fieldsUpdated.push('address_line1') }
@@ -316,6 +342,14 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
       if (place.googlePriceLevel !== null) {
         patch.price_level = mapGooglePriceLevel(place.googlePriceLevel)
         fieldsUpdated.push('price_level')
+      }
+
+      const hasExistingHours = Array.isArray(venue.hours_of_operation) && venue.hours_of_operation.length > 0
+      if (!hasExistingHours && place.hoursOfOperation !== null) {
+        patch.hours_of_operation = place.hoursOfOperation
+        patch.hours_of_operation_source = 'google'
+        hoursSource = 'google'
+        fieldsUpdated.push('hours_of_operation')
       }
 
       if (!isUploadedVenueCoverPhoto(venue.image_url) && place.photoResourceNames.length > 0) {
@@ -332,7 +366,7 @@ export const scrubVenueInfo = createServerFn({ method: 'POST' })
       const { error } = await supabase.from('venues').update(patch).eq('id', data.venueId)
       if (error) throw error
 
-      return { venueId: data.venueId, source: 'google', fieldsUpdated }
+      return { venueId: data.venueId, source: 'google', fieldsUpdated, hoursSource }
     }
 
     throw new Error('No website URL or Google Place ID set on this venue.')

@@ -464,6 +464,7 @@ export const getAdminVenueForEdit = createServerFn({ method: 'GET' })
         schedule_cadence: venue.schedule_cadence,
         image_url: venue.image_url,
         hours_of_operation: (venue.hours_of_operation as HoursOfOperationEntry[] | null) ?? null,
+        hours_of_operation_source: venue.hours_of_operation_source,
       },
       slots,
       events: (eventRows ?? []).map((event) => ({
