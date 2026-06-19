@@ -52,6 +52,10 @@ export function formatTime12h(time: string): string {
     : `${hours12}:${String(minutes).padStart(2, '0')} ${period}`
 }
 
+export function isOvernightSlot(slot: Pick<HappyHourSlot, 'start_time' | 'end_time'>): boolean {
+  return timeToMinutes(slot.end_time) <= timeToMinutes(slot.start_time)
+}
+
 export function isSlotActiveNow(
   slot: Pick<HappyHourSlot, 'day_of_week' | 'start_time' | 'end_time' | 'is_active'>,
   now: Date,
@@ -62,13 +66,22 @@ export function isSlotActiveNow(
   }
 
   const today = getDayOfWeekInTimezone(now, timeZone)
-  if (slot.day_of_week !== today) {
-    return false
-  }
-
   const current = getMinutesInTimezone(now, timeZone)
   const start = timeToMinutes(slot.start_time)
   const end = timeToMinutes(slot.end_time)
+
+  if (isOvernightSlot(slot)) {
+    // Overnight slot: active from start on its day through end on the next day.
+    // Check if we're past start on the slot's day, or before end on the following day.
+    const yesterday = ((today - 1 + 7) % 7) as typeof today
+    if (slot.day_of_week === today && current >= start) return true
+    if (slot.day_of_week === yesterday && current < end) return true
+    return false
+  }
+
+  if (slot.day_of_week !== today) {
+    return false
+  }
   return current >= start && current < end
 }
 
@@ -106,17 +119,20 @@ export function getHappyHourStatus(
   timeZone: string,
 ): HappyHourStatus {
   const today = getDayOfWeekInTimezone(now, timeZone)
+  const yesterday = ((today - 1 + 7) % 7) as DayOfWeek
   const todaySlots = getSlotsForDay(slots, today).sort(
     (a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time),
   )
+  const yesterdayOvernightSlots = getSlotsForDay(slots, yesterday).filter(isOvernightSlot)
+  const allRelevantSlots = [...yesterdayOvernightSlots, ...todaySlots]
 
-  if (todaySlots.length === 0) {
+  if (allRelevantSlots.length === 0) {
     return { kind: 'none_today', label: 'No happy hour today', activeSlot: null }
   }
 
   const currentMinutes = getMinutesInTimezone(now, timeZone)
   const activeSlot =
-    todaySlots.find((slot) => isSlotActiveNow(slot, now, timeZone)) ?? null
+    allRelevantSlots.find((slot) => isSlotActiveNow(slot, now, timeZone)) ?? null
 
   if (activeSlot) {
     return {
@@ -353,17 +369,21 @@ export function getVenueTimelinePlacement(
   timeZone: string,
 ): VenueTimelinePlacement | null {
   const today = getDayOfWeekInTimezone(now, timeZone)
+  const yesterday = ((today - 1 + 7) % 7) as DayOfWeek
   const todaySlots = getSlotsForDay(slots, today).sort(
     (a, b) => timeToMinutes(a.start_time) - timeToMinutes(b.start_time),
   )
+  const yesterdayOvernightSlots = getSlotsForDay(slots, yesterday).filter(isOvernightSlot)
 
-  if (todaySlots.length === 0) {
+  if (todaySlots.length === 0 && yesterdayOvernightSlots.length === 0) {
     return null
   }
 
   const currentMinutes = getMinutesInTimezone(now, timeZone)
   const activeSlot =
-    todaySlots.find((slot) => isSlotActiveNow(slot, now, timeZone)) ?? null
+    [...yesterdayOvernightSlots, ...todaySlots].find((slot) =>
+      isSlotActiveNow(slot, now, timeZone),
+    ) ?? null
 
   if (activeSlot) {
     return {
@@ -498,6 +518,14 @@ export function slotMatchesTimeRange(
 
   const slotStart = timeToMinutes(slot.start_time)
   const slotEnd = timeToMinutes(slot.end_time)
+
+  if (isOvernightSlot(slot)) {
+    // Overnight: active from slotStart to midnight, and from midnight to slotEnd.
+    // Overlaps with range if range starts before midnight (slotStart..1439) or ends after midnight (0..slotEnd).
+    return range.startMinutes <= 1439 && range.endMinutes >= slotStart ||
+      range.startMinutes <= slotEnd
+  }
+
   return slotStart <= range.endMinutes && slotEnd >= range.startMinutes
 }
 
@@ -508,6 +536,11 @@ export function slotMatchesTimeAt(
 ): boolean {
   const slotStart = timeToMinutes(slot.start_time)
   const slotEnd = timeToMinutes(slot.end_time)
+
+  if (isOvernightSlot(slot)) {
+    return timeAtMinutes >= slotStart || timeAtMinutes < slotEnd
+  }
+
   return slotStart <= timeAtMinutes && slotEnd > timeAtMinutes
 }
 

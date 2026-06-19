@@ -102,15 +102,9 @@ export function normalizeAnthropicHappyHourResponse(raw: unknown): ParseHappyHou
       | 'pm'
       | undefined
     const start_time = normalizeTimeValue(slot.start_time, endMeridiem)
-    let end_time = normalizeTimeValue(slot.end_time, endMeridiem)
+    const end_time = normalizeTimeValue(slot.end_time, endMeridiem)
 
-    // "Midnight" as an end time (00:00) means the slot runs to the end of the day.
-    // Our schema requires start_time < end_time, so represent it as 23:59.
-    if (end_time === '00:00' && start_time && start_time !== '00:00') {
-      end_time = '23:59'
-    }
-
-    if (!start_time || !end_time || start_time >= end_time) {
+    if (!start_time || !end_time || start_time === end_time) {
       warnings.push(`Skipped slot with invalid times: ${slot.start_time} – ${slot.end_time}`)
       continue
     }
@@ -183,8 +177,7 @@ Return ONLY valid JSON (no markdown) with this shape:
 
 Rules:
 - days use integers 0=Sunday through 6=Saturday. Group days that share the same window and deals into one slot.
-- start_time and end_time use 24-hour HH:MM (e.g. 16:00). end_time must be after start_time.
-- For slots that run until midnight, use end_time "23:59" — never "00:00".
+- start_time and end_time use 24-hour HH:MM (e.g. 16:00). For overnight slots (e.g. 10pm–2am) use the actual times: start_time "22:00", end_time "02:00".
 - Put each special in the deals array (label, category, optional price_text). category is drinks, food, both, or other.
 - When pasted text lists multiple specials separated by commas, create one deal row per item. Example: "$5 draft pints, $7 apps, half-off wine" becomes three deal rows — never a single comma-separated string in deal_summary.
 - Do not use deal_summary for specials. Leave deal_summary null whenever deals are present or comma-separated specials appear in the paste.
@@ -212,7 +205,7 @@ Return ONLY valid JSON (no markdown) with this shape:
 Rules:
 - Read the FULL menu in the image — days, times, AND every special line item.
 - days use integers 0=Sunday through 6=Saturday. "Every day" or "Daily" = [0,1,2,3,4,5,6].
-- start_time and end_time use 24-hour HH:MM. Convert 3pm-5pm to 15:00–17:00. For midnight end times use 23:59, never 00:00.
+- start_time and end_time use 24-hour HH:MM. Convert 3pm-5pm to 15:00–17:00. Overnight slots (e.g. 10pm–2am) use the actual times: start_time "22:00", end_time "02:00".
 - CRITICAL: Every menu item with a price MUST become its own object in the deals array.
 - For lines like "3 SCHNITZEL SLIDERS - $15" or "KARTOFFELPUFFER - $6": label = item name, price_text = "$15" / "$6".
 - Do NOT skip food items. Sliders, apps, pizza, frites, wings, etc. are all deals with category "food".

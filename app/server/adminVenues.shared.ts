@@ -31,8 +31,7 @@ const dealInputSchema = z.object({
 const slotInputSchema = z.object({
   day_of_week: z.number().int().min(0).max(6),
   start_time: timeSchema,
-  // "00:00" from a time picker means midnight (end of day); store as 23:59 to satisfy start_time < end_time.
-  end_time: timeSchema.transform((val) => (val === '00:00' || val === '00:00:00' ? '23:59' : val)),
+  end_time: timeSchema,
   deal_summary: z.string().nullable().optional(),
   data_status: z.enum(['live', 'pending_review', 'flagged']).optional(),
   is_active: z.boolean().optional(),
