@@ -150,7 +150,7 @@ export function VenueInfoCorrection({ venueId, venueSlug }: VenueInfoCorrectionP
           className="venue-trust-footer__correction-trigger text-left text-xs font-semibold text-primary underline-offset-2 hover:underline"
           onClick={handleOpen}
         >
-          Is this information incorrect?
+          See something off? Let us know
         </button>
         {submittedDialog}
       </>
@@ -162,7 +162,8 @@ export function VenueInfoCorrection({ venueId, venueSlug }: VenueInfoCorrectionP
       <>
         <div className="venue-trust-footer__correction-panel space-y-2">
           <p className="text-xs text-muted-foreground">
-            Sign in to upload a photo of the happy hour menu so we can review it.
+            Snap a pic of the happy hour menu and become a local legend. Sign in first so we know
+            who to thank.
           </p>
           <Link
             to="/login"
@@ -188,7 +189,8 @@ export function VenueInfoCorrection({ venueId, venueSlug }: VenueInfoCorrectionP
     <>
       <div className="venue-trust-footer__correction-panel space-y-2">
         <p className="text-xs text-muted-foreground">
-          Upload a photo of the happy hour menu and we will review any updates.
+          Snap a photo of the happy hour menu and our crack team of deal detectives will give it a
+          look.
         </p>
 
         <input

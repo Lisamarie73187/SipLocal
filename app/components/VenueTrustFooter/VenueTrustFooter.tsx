@@ -42,23 +42,16 @@ export function VenueTrustFooter({
   return (
     <section className={cn('venue-trust-footer', className)} aria-label={ariaLabel}>
       {meta.freshnessDate && meta.freshnessKind ? (
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="venue-trust-footer__updated text-xs text-muted-foreground">
-              {formatTrustFreshnessLabel(meta.freshnessKind, meta.freshnessDate)}
-            </p>
-            {meta.isCommunityVerified && meta.freshnessKind === 'verified' ? (
-              <span className="venue-trust-footer__badge venue-trust-footer__badge--community inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase">
-                Community verified
-              </span>
-            ) : null}
-          </div>
-          {canShowCorrection ? (
-            <VenueInfoCorrection venueId={venueId} venueSlug={venueSlug} />
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="venue-trust-footer__updated text-xs text-muted-foreground">
+            {formatTrustFreshnessLabel(meta.freshnessKind, meta.freshnessDate)}
+          </p>
+          {meta.isCommunityVerified && meta.freshnessKind === 'verified' ? (
+            <span className="venue-trust-footer__badge venue-trust-footer__badge--community inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase">
+              Community verified
+            </span>
           ) : null}
         </div>
-      ) : canShowCorrection ? (
-        <VenueInfoCorrection venueId={venueId} venueSlug={venueSlug} />
       ) : null}
 
       {showConfidence ? (
@@ -73,6 +66,8 @@ export function VenueTrustFooter({
           {getConfidenceBadgeLabel(meta.confidence)}
         </span>
       ) : null}
+
+      {canShowCorrection ? <VenueInfoCorrection venueId={venueId} venueSlug={venueSlug} /> : null}
 
       {showSourceCount && meta.sourceCount > 0 ? (
         <p className="venue-trust-footer__sources text-xs text-muted-foreground">

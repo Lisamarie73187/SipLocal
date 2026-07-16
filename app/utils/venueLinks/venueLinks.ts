@@ -15,3 +15,7 @@ export function formatVenueWebsiteUrl(url: string): string {
   }
   return `https://${trimmed}`
 }
+
+export function getVenuePhoneUrl(phone: string): string {
+  return `tel:${phone.trim().replace(/[^\d+]/g, '')}`
+}

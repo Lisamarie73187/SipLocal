@@ -1,13 +1,11 @@
-import { Clock, ExternalLink } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 import { VenueHappyHourMenuImage } from '@/components/VenueHappyHourMenuImage/VenueHappyHourMenuImage'
 import { VenueTrustFooter } from '@/components/VenueTrustFooter/VenueTrustFooter'
-import { Button } from '@/components/ui/button'
 import type { VenueDetail } from '@/types/venue'
 import type { VenueTrustMeta } from '@/utils/venueTrust'
 import { formatHappyHourWindow } from '@/utils/happyHour'
 import { groupHappyHourSlotsForDisplay } from '@/utils/happyHourSchedule'
-import { formatVenueWebsiteUrl } from '@/utils/venueLinks'
 import { cn } from '@/utils'
 
 export interface VenueExpandedDetailsProps {
@@ -23,7 +21,6 @@ export function VenueExpandedDetails({
   showInfoCorrection = true,
   className,
 }: VenueExpandedDetailsProps) {
-  const websiteUrl = venue.website_url?.trim() ? formatVenueWebsiteUrl(venue.website_url) : null
   const scheduleGroups = groupHappyHourSlotsForDisplay(venue.happy_hour_slots)
 
   return (
@@ -68,17 +65,8 @@ export function VenueExpandedDetails({
           venueSlug={venue.slug}
           showInfoCorrection={showInfoCorrection}
           showSourceCount={false}
-          showConfidenceBadge={false}
+          showConfidenceBadge
         />
-      ) : null}
-
-      {websiteUrl ? (
-        <Button asChild variant="outline" className="h-10 w-full gap-2 text-sm" size="sm">
-          <a href={websiteUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="size-4 shrink-0" aria-hidden />
-            Website
-          </a>
-        </Button>
       ) : null}
     </div>
   )

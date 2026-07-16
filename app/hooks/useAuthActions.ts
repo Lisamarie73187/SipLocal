@@ -17,6 +17,8 @@ export interface UseAuthActionsResult {
     mode: AuthFormMode,
     input: { email: string; password: string },
   ) => Promise<AuthFormResult>
+  submitPasswordReset: (email: string) => Promise<AuthFormResult>
+  submitPasswordUpdate: (password: string) => Promise<AuthFormResult>
   submitting: boolean
   formError: string | null
   clearFormError: () => void
@@ -103,5 +105,68 @@ export function useAuthActions(): UseAuthActionsResult {
     [],
   )
 
-  return { submitAuth, submitting, formError, clearFormError }
+  const submitPasswordReset = useCallback(async (email: string): Promise<AuthFormResult> => {
+    setSubmitting(true)
+    setFormError(null)
+
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+
+      if (error) {
+        const message = error.message
+        setFormError(message)
+        return { ok: false, needsEmailConfirmation: false, message }
+      }
+
+      return {
+        ok: true,
+        needsEmailConfirmation: false,
+        message: "If an account exists for that email, we've sent a link to reset your password.",
+      }
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Something went wrong. Try again.'
+      logger.error('Password reset request failed', caught)
+      setFormError(message)
+      return { ok: false, needsEmailConfirmation: false, message }
+    } finally {
+      setSubmitting(false)
+    }
+  }, [])
+
+  const submitPasswordUpdate = useCallback(async (password: string): Promise<AuthFormResult> => {
+    setSubmitting(true)
+    setFormError(null)
+
+    try {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase.auth.updateUser({ password })
+
+      if (error) {
+        const message = error.message
+        setFormError(message)
+        return { ok: false, needsEmailConfirmation: false, message }
+      }
+
+      return { ok: true, needsEmailConfirmation: false, message: null }
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : 'Something went wrong. Try again.'
+      logger.error('Password update failed', caught)
+      setFormError(message)
+      return { ok: false, needsEmailConfirmation: false, message }
+    } finally {
+      setSubmitting(false)
+    }
+  }, [])
+
+  return {
+    submitAuth,
+    submitPasswordReset,
+    submitPasswordUpdate,
+    submitting,
+    formError,
+    clearFormError,
+  }
 }

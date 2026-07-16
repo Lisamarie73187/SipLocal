@@ -2,9 +2,9 @@ import { Clock, MapPin, X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { NowBadge } from '@/components/NowBadge/NowBadge'
+import { VenueDetailActions } from '@/components/VenueDetailActions/VenueDetailActions'
 import { VenueExpandedDetails } from '@/components/VenueExpandedDetails/VenueExpandedDetails'
 import { VenueFavoriteButton } from '@/components/VenueFavoriteButton/VenueFavoriteButton'
-import { VenueMapOverlayDirections } from '@/components/VenueMapOverlayDirections/VenueMapOverlayDirections'
 import { VenueMapOverlaySpecials } from '@/components/VenueMap/VenueMapOverlaySpecials'
 import { VenuePriceLevel } from '@/components/VenuePriceLevel/VenuePriceLevel'
 import { VenueThumbnail } from '@/components/VenueThumbnail/VenueThumbnail'
@@ -93,9 +93,18 @@ export function VenueMapPlacePanel({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="pt-3">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <h2 className="font-heading text-lg font-bold text-dark">{venue.name}</h2>
-            <VenuePriceLevel level={venue.price_level} className="text-sm" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <h2 className="font-heading text-lg font-bold text-dark">{venue.name}</h2>
+              <VenuePriceLevel level={venue.price_level} className="text-sm" />
+            </div>
+            {!preview ? (
+              <VenueFavoriteButton
+                venueId={venue.id}
+                variant="overlay"
+                className="-mt-1 shrink-0"
+              />
+            ) : null}
           </div>
           <p className="mt-1 line-clamp-3 text-sm leading-snug text-muted-foreground">{subtitle}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -134,15 +143,7 @@ export function VenueMapPlacePanel({
 
         <VenueMapOverlaySpecials chips={dealChips} />
 
-        <div
-          className={cn(
-            'mt-4 flex items-center justify-between gap-3',
-            preview && 'justify-start',
-          )}
-        >
-          <VenueMapOverlayDirections venue={venue} className="mt-0" />
-          {!preview ? <VenueFavoriteButton venueId={venue.id} variant="overlay" /> : null}
-        </div>
+        <VenueDetailActions venue={venue} className="mt-4" />
 
         <VenueExpandedDetails
           venue={venue}
