@@ -1,6 +1,9 @@
+import type { ReactNode } from 'react'
+
 import type { EventTimelineSection } from '@/hooks/useEventTimeline'
 import type { TimelineSection } from '@/hooks/useHappyHourTimeline'
 import type { DiscoveryContentType, UseDiscoveryFiltersResult } from '@/hooks/useDiscoveryFilters'
+import { cn } from '@/utils'
 
 import { TimelineEmptyVenueSuggest } from '@/components/TimelineEmptyVenueSuggest/TimelineEmptyVenueSuggest'
 
@@ -25,6 +28,8 @@ export interface TimelinePanelProps {
   onSelectEvent: (eventId: string, venueId: string) => void
   onHoverEvent: (eventId: string | null, venueId: string | null) => void
   nowLabel: string
+  className?: string
+  mobileHeader?: ReactNode
 }
 
 function emptyMessage(contentType: DiscoveryContentType): string {
@@ -51,6 +56,8 @@ export function TimelinePanel({
   onSelectEvent,
   onHoverEvent,
   nowLabel,
+  className,
+  mobileHeader,
 }: TimelinePanelProps) {
   const { hasActiveFilters, clearAllFilters } = filters
   const isEventsMode = contentType === 'events'
@@ -59,8 +66,11 @@ export function TimelinePanel({
   const isEmpty = isEventsMode ? !hasEventEntries : !hasVenueSections
 
   return (
-    <aside className="discovery-shell__timeline flex h-full min-h-0 flex-col bg-background">
-      <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth px-3 py-4">
+    <aside
+      className={cn('discovery-shell__timeline flex min-h-0 flex-col bg-background', className)}
+    >
+      {mobileHeader}
+      <div className="min-h-0 flex-1 overflow-y-auto scroll-smooth px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {loading ? (
           <TimelineSkeleton />
         ) : isEmpty ? (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { List, X } from 'lucide-react'
 
 import { DiscoveryHeader } from '@/components/DiscoveryHeader/DiscoveryHeader'
 import { TimelinePanel } from '@/components/TimelinePanel/TimelinePanel'
@@ -12,6 +13,7 @@ import { useUserLocation } from '@/hooks/useUserLocation'
 import { useVenues } from '@/hooks/useVenues'
 import type { VenueDetail } from '@/types/venue'
 import { distanceMiles, formatDistanceMiles } from '@/utils/geo'
+import { cn } from '@/utils'
 
 function venuesForMap(
   contentType: ReturnType<typeof useDiscoveryFilters>['applied']['contentType'],
@@ -43,6 +45,7 @@ export function DiscoveryView() {
   const [hoveredVenueId, setHoveredVenueId] = useState<string | null>(null)
   const [hoveredEventId, setHoveredEventId] = useState<string | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+  const [isListDrawerOpen, setIsListDrawerOpen] = useState(false)
 
   const distanceOrigin = useMemo((): MapViewport => {
     if (userLocation) {
@@ -138,31 +141,43 @@ export function DiscoveryView() {
 
   const { selectVenue, clearSelection } = map
 
+  const isMobileViewport = useCallback((): boolean => {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  }, [])
+
   const handleSelectVenue = useCallback(
     (venueId: string): void => {
       setSelectedEventId(null)
+      setIsListDrawerOpen(false)
       selectVenue(venueId)
+      if (isMobileViewport()) {
+        return
+      }
       requestAnimationFrame(() => {
         document
           .querySelector(`[data-venue-id="${venueId}"]`)
           ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       })
     },
-    [selectVenue],
+    [isMobileViewport, selectVenue],
   )
 
   const handleSelectEvent = useCallback(
     (eventId: string, venueId: string): void => {
       setSelectedEventId(eventId)
+      setIsListDrawerOpen(false)
       selectVenue(venueId)
       void refetchEvents()
+      if (isMobileViewport()) {
+        return
+      }
       requestAnimationFrame(() => {
         document
           .querySelector(`[data-event-id="${eventId}"]`)
           ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       })
     },
-    [refetchEvents, selectVenue],
+    [isMobileViewport, refetchEvents, selectVenue],
   )
 
   const handleMapPinSelect = useCallback(
@@ -175,6 +190,7 @@ export function DiscoveryView() {
           const event = events.find((item) => item.id === current)
           return event?.venue.id === venueId ? current : null
         })
+        setIsListDrawerOpen(false)
         selectVenue(venueId)
         return
       }
@@ -182,6 +198,16 @@ export function DiscoveryView() {
     },
     [contentType, events, handleSelectVenue, selectVenue],
   )
+
+  const handleOpenListDrawer = useCallback((): void => {
+    setSelectedEventId(null)
+    clearSelection()
+    setIsListDrawerOpen(true)
+  }, [clearSelection])
+
+  const handleCloseListDrawer = useCallback((): void => {
+    setIsListDrawerOpen(false)
+  }, [])
 
   const handleHoverVenue = useCallback((venueId: string | null): void => {
     setHoveredVenueId(venueId)
@@ -248,6 +274,7 @@ export function DiscoveryView() {
         useMyLocationLoading={locatingUser}
         useMyLocationActive={userLocation != null}
         locationError={locationError}
+        onFlyToLocation={map.flyToPoint}
       />
       <div className="discovery-page__main">
         <div className="discovery-content-inset discovery-page__frame">
@@ -268,8 +295,25 @@ export function DiscoveryView() {
               onHoverVenue={handleHoverVenue}
               onSelectEvent={handleSelectEvent}
               onHoverEvent={handleHoverEvent}
-              nowLabel={
-                contentType === 'events' ? eventTimeline.nowLabel : venueTimeline.nowLabel
+              nowLabel={contentType === 'events' ? eventTimeline.nowLabel : venueTimeline.nowLabel}
+              className={cn('discovery-list-drawer', isListDrawerOpen && 'discovery-list-drawer--open')}
+              mobileHeader={
+                <div className="discovery-list-drawer__header md:hidden">
+                  <span className="discovery-list-drawer__handle" aria-hidden />
+                  <div className="flex items-center justify-between">
+                    <p className="font-heading text-sm font-bold text-dark">
+                      {resultCount} {contentType === 'events' ? 'events' : 'venues'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCloseListDrawer}
+                      aria-label="Close list"
+                      className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-dark"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                </div>
               }
             />
             <div className="discovery-shell__map">
@@ -288,6 +332,17 @@ export function DiscoveryView() {
                   onVenueSelect={handleMapPinSelect}
                   onClearSelection={handleClearMapSelection}
                 />
+                {!isListDrawerOpen && !selectedVenueForPanel && !selectedEventForPanel ? (
+                  <button
+                    type="button"
+                    onClick={handleOpenListDrawer}
+                    className="discovery-list-toggle md:hidden"
+                  >
+                    <List className="size-4" aria-hidden />
+                    List
+                    <span className="discovery-list-toggle__count">{resultCount}</span>
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>

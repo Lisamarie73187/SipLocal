@@ -252,6 +252,10 @@ h6 {
   overflow: hidden;
 }
 
+.discovery-shell__timeline {
+  height: 100%;
+}
+
 .discovery-shell__map {
   position: relative;
   display: flex;
@@ -282,17 +286,98 @@ h6 {
 }
 
 @media (max-width: 767px) {
-  .discovery-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(220px, 42dvh);
+  .discovery-page__frame.discovery-content-inset {
+    padding-inline: 0;
   }
 
-  .discovery-shell__timeline {
-    order: 2;
+  .discovery-shell {
+    display: block;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
   }
 
   .discovery-shell__map {
-    order: 1;
+    position: absolute;
+    inset: 0;
+  }
+
+  .discovery-map-card {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+
+  .discovery-list-toggle {
+    position: absolute;
+    right: max(1rem, env(safe-area-inset-right));
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    padding: 0.65rem 1.1rem;
+    background: var(--color-deep-plum);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow:
+      0 10px 24px -8px color-mix(in oklab, var(--color-deep-plum) 55%, transparent),
+      0 1px 2px color-mix(in oklab, var(--color-charcoal-text) 20%, transparent);
+  }
+
+  .discovery-list-toggle__count {
+    border-radius: 999px;
+    background: var(--color-sunset-coral);
+    padding: 0.05rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .discovery-list-drawer {
+    position: absolute;
+    top: calc(100% - min(72dvh, 560px));
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    max-height: min(72dvh, 560px);
+    background: var(--color-background);
+    border-radius: 1rem 1rem 0 0;
+    border-top: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+    box-shadow: 0 -12px 30px -14px color-mix(in oklab, var(--color-charcoal-text) 35%, transparent);
+    transform: translateY(100%);
+    transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  .discovery-list-drawer--open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .discovery-list-drawer__header {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem 0.5rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+  }
+
+  .discovery-list-drawer__handle {
+    align-self: center;
+    width: 2.25rem;
+    height: 0.25rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-border) 90%, var(--color-charcoal-text) 10%);
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
+  .discovery-list-drawer {
+    transition: none;
   }
 }
 

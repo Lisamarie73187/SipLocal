@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MapPin, Navigation, Search, X } from 'lucide-react'
 
 import { AccountMenu } from '@/components/AccountMenu/AccountMenu'
+import { LocationDropdown } from '@/components/LocationDropdown/LocationDropdown'
 
 import type { UseDiscoveryFiltersResult } from '@/hooks/useDiscoveryFilters'
 import { cn } from '@/utils'
@@ -9,6 +10,7 @@ import { cn } from '@/utils'
 import { SipSocialLogo } from '@/components/SipSocialLogo/SipSocialLogo'
 
 import { DiscoveryFilterBar } from './DiscoveryFilterBar'
+import { MobileFiltersMenu } from './MobileFiltersMenu'
 
 export interface DiscoveryHeaderProps {
   cityName: string
@@ -18,6 +20,7 @@ export interface DiscoveryHeaderProps {
   useMyLocationLoading?: boolean
   useMyLocationActive?: boolean
   locationError?: string | null
+  onFlyToLocation?: (latitude: number, longitude: number, zoom?: number) => void
 }
 
 export function DiscoveryHeader({
@@ -28,6 +31,7 @@ export function DiscoveryHeader({
   useMyLocationLoading = false,
   useMyLocationActive = false,
   locationError = null,
+  onFlyToLocation,
 }: DiscoveryHeaderProps) {
   const { applied, setSearch } = filters
   const searchPlaceholder =
@@ -35,20 +39,22 @@ export function DiscoveryHeader({
       ? 'Search events, venues, or trivia…'
       : 'Search venues, vibes, or deals…'
   const [cityQuery, setCityQuery] = useState(cityName)
+  const [mobileLocationLabel, setMobileLocationLabel] = useState(cityName)
   const hasSearch = applied.search.trim().length > 0
 
   return (
     <header className="discovery-header shrink-0">
-      <div className="discovery-content-inset pb-5">
-        <div className="discovery-header__brand relative pt-6 pb-5">
-          <div className="absolute top-6 right-0">
+      <div className="discovery-content-inset pb-2 md:pb-5">
+        <div className="discovery-header__brand relative pt-2 pb-1.5 md:pt-6 md:pb-5">
+          <div className="absolute top-2 right-0 md:top-6">
             <AccountMenu />
           </div>
-          <SipSocialLogo variant="full" />
+          <SipSocialLogo variant="full" className="h-6 w-auto md:h-auto" />
         </div>
 
         <div className="discovery-header__search">
-          <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
+          {/* Desktop: unchanged 3-item row (search, city input, use-my-location button) */}
+          <div className="hidden md:flex md:flex-row md:items-center md:gap-2.5">
             <label className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -104,14 +110,55 @@ export function DiscoveryHeader({
             </button>
           </div>
           {locationError ? (
-            <p className="mt-2 text-xs text-destructive" role="alert">
+            <p className="mt-2 hidden text-xs text-destructive md:block" role="alert">
               {locationError}
             </p>
           ) : null}
+
+          {/* Mobile: single-line search row with location icon button */}
+          <div className="flex items-center gap-1.5 md:hidden">
+            <label className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={applied.search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="discovery-header__input h-10 w-full rounded-xl border border-border/70 bg-card pr-9 pl-10 text-sm text-dark shadow-sm placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              {hasSearch ? (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-dark"
+                  aria-label="Clear search"
+                >
+                  <X className="size-4" />
+                </button>
+              ) : null}
+            </label>
+
+            <LocationDropdown
+              variant="icon"
+              align="end"
+              label={mobileLocationLabel}
+              onLabelChange={setMobileLocationLabel}
+              onFlyToLocation={onFlyToLocation ?? (() => {})}
+              onUseMyLocation={onUseMyLocation}
+              useMyLocationLoading={useMyLocationLoading}
+              useMyLocationActive={useMyLocationActive}
+              locationError={locationError}
+            />
+          </div>
         </div>
 
-        <div className="discovery-header__filters pt-3">
-          <DiscoveryFilterBar filters={filters} resultCount={resultCount} />
+        <div className="discovery-header__filters pt-1.5 md:pt-3">
+          <div className="md:hidden">
+            <MobileFiltersMenu filters={filters} resultCount={resultCount} />
+          </div>
+          <div className="hidden md:block">
+            <DiscoveryFilterBar filters={filters} resultCount={resultCount} />
+          </div>
         </div>
       </div>
     </header>

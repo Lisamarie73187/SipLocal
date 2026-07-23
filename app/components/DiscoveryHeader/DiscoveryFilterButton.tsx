@@ -37,7 +37,7 @@ export function DiscoveryFilterButton({
       aria-expanded={ariaExpanded}
       aria-haspopup={ariaHaspopup}
       className={cn(
-        'discovery-filter-btn inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold shadow-sm transition-[background,box-shadow,color,border-color]',
+        'discovery-filter-btn inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-[background,box-shadow,color,border-color] md:gap-2 md:px-4 md:py-2 md:text-sm',
         'disabled:cursor-not-allowed disabled:opacity-50',
         active
           ? isFiltersVariant
@@ -47,7 +47,7 @@ export function DiscoveryFilterButton({
       )}
     >
       <Icon
-        className={cn('size-4 shrink-0', active && 'text-white')}
+        className={cn('size-3.5 shrink-0 md:size-4', active && 'text-white')}
         aria-hidden
       />
       <span className="whitespace-nowrap">{label}</span>

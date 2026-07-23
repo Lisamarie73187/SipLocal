@@ -27,7 +27,7 @@ export function ContentTypeToggle({ value, onChange }: ContentTypeToggleProps) {
             onClick={() => onChange(option.id)}
             aria-pressed={active}
             className={cn(
-              'min-h-9 shrink-0 whitespace-nowrap rounded-lg px-4 text-sm font-semibold transition-colors',
+              'min-h-9 shrink-0 whitespace-nowrap rounded-lg px-3 text-xs font-semibold transition-colors md:px-4 md:text-sm',
               active
                 ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground hover:bg-accent hover:text-dark',
